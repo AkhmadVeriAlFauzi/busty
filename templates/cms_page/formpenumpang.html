@@ -1,0 +1,35 @@
+{% extends 'cmsbase.html' %}
+
+{% block title %}{{ action }} Penumpang{% endblock %}
+
+{% block content %}
+<main class="container mx-auto px-4 py-32 max-w-2xl">
+
+    <h1 class="text-3xl font-bold text-gray-800 mb-8">{{ action }} Penumpang</h1>
+
+    <form method="POST" class="bg-white p-8 rounded-2xl shadow-lg space-y-6">
+        <div>
+            <label class="block mb-2 text-sm font-medium text-gray-700">Nama Penumpang</label>
+            <input type="text" name="nama" value="{{ penumpang.nama if penumpang else '' }}" required
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+        <div>
+            <label class="block mb-2 text-sm font-medium text-gray-700">Rute</label>
+            <input type="text" name="rute" value="{{ penumpang.rute if penumpang else '' }}" required
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+        <div>
+            <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal</label>
+            <input type="date" name="tanggal" value="{{ penumpang.tanggal if penumpang else '' }}" required
+                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+        </div>
+
+        <div class="flex justify-end">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow transition">
+                Simpan
+            </button>
+        </div>
+    </form>
+
+</main>
+{% endblock %}

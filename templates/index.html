@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to Busty{% endblock %}
+
+{% block content %}
+<main class="container mx-auto px-32 py-32 flex-grow flex flex-col justify-center bg-gradient-to-tr from-blue-950 to-purple-900 text-white ">
+    <div class="flex flex-col-reverse lg:flex-row items-center gap-10 text-left">
+        
+        <!-- Kiri: Text -->
+        <div class="lg:w-1/2">
+            <h2 class="text-4xl font-bold mb-4">Welcome to Busty</h2>
+            <p class="text-lg mb-8">
+                Busty merupakan sistem manajemen dan pemantauan pengemudi bus. Dirancang untuk mengoptimalkan
+                kinerja pengemudi, memastikan keselamatan, dan menyederhanakan manajemen rute.
+            </p>
+            <a href="{{ url_for('auth.login') }}"
+                class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                Go to Dashboard
+            </a>
+        </div>
+
+        <!-- Kanan: Gambar -->
+        <div class="lg:w-1/2 flex justify-end">
+            <img src="/static/image/frame app.svg" alt="Illustration"
+                class="w-[40%] h-auto rounded-3xl shadow-md" />
+        </div>
+
+    </div>
+</main>
+
+<!-- Fitur Section -->
+<section class="py-16 px-32">
+    <div class="container mx-auto text-center">
+        <h2 class="text-3xl font-semibold mb-6">Fitur Utama Busty</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-semibold mb-4">Deteksi Ngantuk</h3>
+                <p class="text-gray-600">Busty memantau kondisi pengemudi untuk mendeteksi tanda-tanda kelelahan
+                    dan ngantuk guna mencegah kecelakaan. Sistem ini memastikan pengemudi tetap fokus dan aman
+                    selama perjalanan.</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-semibold mb-4">Manajemen Rute</h3>
+                <p class="text-gray-600">Busty memungkinkan pemantauan rute perjalanan secara real-time untuk
+                    memastikan perjalanan pengemudi efisien dan aman, serta menghindari kemacetan atau rute
+                    berbahaya.</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-lg">
+                <h3 class="text-xl font-semibold mb-4">Manajemen Pengemudi</h3>
+                <p class="text-gray-600">Sistem manajemen pengemudi memungkinkan pencatatan data pengemudi,
+                    riwayat perjalanan, dan jadwal secara terpusat. Hal ini memudahkan untuk melacak kinerja dan
+                    kebijakan pengemudi secara menyeluruh.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonial Section (Optional) -->
+<section class="py-16">
+    <div class="container mx-auto text-center">
+        <h2 class="text-3xl font-semibold mb-6">Apa Kata Pengguna</h2>
+        <div class="flex justify-center gap-10">
+            <div class="bg-white p-6 rounded-lg shadow-lg w-[300px]">
+                <p class="text-gray-600 mb-4">"Busty membantu kami dalam memonitor pengemudi dan mengoptimalkan
+                    rute perjalanan. Sistem deteksi ngantuk sangat membantu dalam menjaga keselamatan di jalan
+                    raya."</p>
+                <p class="font-semibold">Rani - Pengemudi Bus</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-lg w-[300px]">
+                <p class="text-gray-600 mb-4">"Dengan Busty, manajemen pengemudi jadi lebih terstruktur dan
+                    efisien. Fitur-fitur yang mudah digunakan dan memberikan informasi yang jelas membantu kami
+                    mengambil keputusan lebih baik."</p>
+                <p class="font-semibold">Arif - Manajer Armada</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Step by Step Penggunaan -->
+<section class="py-20 px-32 bg-gray-100">
+    <div class="container mx-auto text-center">
+        <h2 class="text-3xl font-semibold mb-10">Cara Menggunakan Aplikasi Busty</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-12 text-left">
+
+            <!-- Step 1 -->
+            <div class="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
+                <div class="bg-blue-600 text-white w-12 h-12 flex items-center justify-center rounded-full mb-4 text-xl font-bold">
+                    1
+                </div>
+                <h3 class="text-xl font-semibold mb-2">Login ke Dashboard</h3>
+                <p class="text-gray-600 text-center">Masuk menggunakan akun Anda sebagai pengemudi atau manajer untuk mulai memantau aktivitas.</p>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
+                <div class="bg-blue-600 text-white w-12 h-12 flex items-center justify-center rounded-full mb-4 text-xl font-bold">
+                    2
+                </div>
+                <h3 class="text-xl font-semibold mb-2">Pantau Rute & Pengemudi</h3>
+                <p class="text-gray-600 text-center">Lihat informasi rute secara real-time, kondisi pengemudi, dan histori perjalanan.</p>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center">
+                <div class="bg-blue-600 text-white w-12 h-12 flex items-center justify-center rounded-full mb-4 text-xl font-bold">
+                    3
+                </div>
+                <h3 class="text-xl font-semibold mb-2">Ambil Tindakan</h3>
+                <p class="text-gray-600 text-center">Gunakan insight yang disediakan Busty untuk mengambil keputusan demi keamanan & efisiensi armada.</p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+<!-- Step by Step Timeline Responsive -->
+<section class="py-20 px-6 md:px-16 lg:px-32 bg-gray-100">
+  <div class="container mx-auto text-center">
+    <h2 class="text-3xl font-semibold mb-14">Cara Menggunakan Aplikasi Busty</h2>
+
+    <div class="flex flex-col space-y-16">
+      
+      <!-- Steps Row 1 -->
+      <div class="relative border-t-4 border-blue-600 flex flex-col md:flex-row md:justify-between md:items-start text-left gap-10">
+        <!-- Step 1 -->
+        <div class="relative md:w-1/3 px-4">
+          <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 md:left-1/2 bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-full z-10 font-bold">1</div>
+          <div class="mt-10 bg-white p-6 rounded-xl shadow-md">
+            <h3 class="text-xl font-semibold text-blue-700 mb-2">Buat Akun</h3>
+            <p class="text-gray-600 text-sm">Daftar sebagai pengemudi atau manajer untuk mulai menggunakan aplikasi.</p>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="relative md:w-1/3 px-4">
+          <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 md:left-1/2 bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-full z-10 font-bold">2</div>
+          <div class="mt-10 bg-white p-6 rounded-xl shadow-md">
+            <h3 class="text-xl font-semibold text-blue-700 mb-2">Login ke Dashboard</h3>
+            <p class="text-gray-600 text-sm">Akses fitur utama seperti pantauan real-time dan manajemen rute.</p>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="relative md:w-1/3 px-4">
+          <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 md:left-1/2 bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-full z-10 font-bold">3</div>
+          <div class="mt-10 bg-white p-6 rounded-xl shadow-md">
+            <h3 class="text-xl font-semibold text-blue-700 mb-2">Tambah Data Pengemudi</h3>
+            <p class="text-gray-600 text-sm">Input informasi pengemudi untuk memulai proses pemantauan dan pelacakan.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Steps Row 2 -->
+      <div class="relative border-t-4 border-blue-600 flex flex-col md:flex-row md:justify-between md:items-start text-left gap-10">
+        <!-- Step 4 -->
+        <div class="relative md:w-1/3 px-4">
+          <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 md:left-1/2 bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-full z-10 font-bold">4</div>
+          <div class="mt-10 bg-white p-6 rounded-xl shadow-md">
+            <h3 class="text-xl font-semibold text-blue-700 mb-2">Pantau Kondisi</h3>
+            <p class="text-gray-600 text-sm">Deteksi ngantuk otomatis membantu menjaga keselamatan pengemudi.</p>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="relative md:w-1/3 px-4">
+          <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 md:left-1/2 bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-full z-10 font-bold">5</div>
+          <div class="mt-10 bg-white p-6 rounded-xl shadow-md">
+            <h3 class="text-xl font-semibold text-blue-700 mb-2">Pantau Perjalanan</h3>
+            <p class="text-gray-600 text-sm">Lihat rute real-time dan hindari kemacetan atau jalur berbahaya.</p>
+          </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="relative md:w-1/3 px-4">
+          <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 md:left-1/2 bg-blue-600 text-white w-8 h-8 flex items-center justify-center rounded-full z-10 font-bold">6</div>
+          <div class="mt-10 bg-white p-6 rounded-xl shadow-md">
+            <h3 class="text-xl font-semibold text-blue-700 mb-2">Ambil Keputusan</h3>
+            <p class="text-gray-600 text-sm">Gunakan laporan untuk evaluasi dan optimasi pengelolaan armada.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+  
+  
+{% endblock %}
