@@ -1,0 +1,64 @@
+{% extends 'cms_page/cmsbase.html' %}
+
+{% block title %}Busty | Detail Cuaca{% endblock %}
+{% block page_title %}Detail Cuaca{% endblock %}
+
+{% block content %}
+<p>Berikut Detail Prediksi Cuaca Per Hari ini</p>
+
+<!-- Dropdown filter kecamatan -->
+<form method="get" action="{{ url_for('main.detail_cuaca') }}">
+    <label for="kecamatan">Pilih Kecamatan:</label>
+    <select name="kecamatan" id="kecamatan" onchange="this.form.submit()">
+        <option value="">Semua Kecamatan</option>
+        {% for kecamatan in kecamatan_list %}
+            <option value="{{ kecamatan }}" {% if kecamatan == selected_kecamatan %}selected{% endif %}>{{ kecamatan }}</option>
+        {% endfor %}
+    </select>
+</form>
+<br>
+
+<!-- Visualisasi Chart -->
+{% set grouped = {} %}
+{% for item in cuaca_data %}
+    {% set kec = item.kecamatan %}
+    {% if kec not in grouped %}
+        {% set _ = grouped.update({kec: []}) %}
+    {% endif %}
+    {% set _ = grouped[kec].append(item) %}
+{% endfor %}
+
+{% for kecamatan, data in grouped.items() %}
+    <h2>{{ kecamatan }}</h2>
+    <canvas id="chart-{{ loop.index }}" width="400" height="200"></canvas>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx{{ loop.index }} = document.getElementById('chart-{{ loop.index }}').getContext('2d');
+        new Chart(ctx{{ loop.index }}, {
+            type: 'bar',
+            data: {
+                labels: {{ data | map(attribute = 'kelurahan') | list | tojson }},
+                datasets: [{
+                    label: 'Suhu (°C)',
+                    data: {{ data | map(attribute = 'suhu') | list | tojson }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        suggestedMin: 0,
+                        suggestedMax: 50,
+                        title: {
+                            display: true,
+                            text: 'Suhu (°C)'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+{% endfor %}
+{% endblock %}

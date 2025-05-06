@@ -1,9 +1,10 @@
 from datetime import datetime
+from bson import ObjectId
 from werkzeug.security import generate_password_hash
 
 class User:
     def __init__(self, db):
-        self.collection = db['user']  # Nama koleksi MongoDB lu (users)
+        self.collection = db['user']
 
     def create_user(self, username, email, no_hp, password):
         hashed_password = generate_password_hash(password)
@@ -21,3 +22,6 @@ class User:
 
     def find_by_username(self, username):
         return self.collection.find_one({'username': username})
+
+    def find_by_id(self, user_id):
+        return self.collection.find_one({'_id': ObjectId(user_id)})
