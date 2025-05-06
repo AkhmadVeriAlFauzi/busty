@@ -95,8 +95,6 @@ def api_login():
     return jsonify({'status': 'success', 'token': token}), 200
 
 
-
-
 @api.route('/data-cuaca', methods=['GET'])
 @require_auth
 def get_data_cuaca():

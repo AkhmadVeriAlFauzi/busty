@@ -1,10 +1,12 @@
 from flask import Flask
-from routes import main, auth  # pastikan import blueprint auth
+from flask_cors import CORS  # ✅ Import CORS
+from routes import main, auth
 from api.api import api
 
 app = Flask(__name__)
-
 app.secret_key = 'busty_secret_key'
+
+CORS(app)  # ✅ Aktifkan CORS untuk seluruh route
 
 # Register Blueprints
 app.register_blueprint(main)
