@@ -74,7 +74,7 @@ def api_register():
         return jsonify({'status': 'error', 'message': 'Username sudah terdaftar.'}), 409
 
     user_model.create_user(username, email, no_hp, password)
-    return jsonify({'status': 'success', 'message': 'Registrasi berhasil.'}), 201
+    return jsonify({'status':True, 'message': 'Registrasi berhasil.'}), 201
 
 @api.route('/login', methods=['POST'])
 def api_login():
