@@ -80,20 +80,25 @@ def logout():
 
 @main.route('/detail-cuaca')
 def detail_cuaca():
-    kecamatan_filter = request.args.get('kecamatan')
-    cuaca_data = list(dbcuaca['prakiraan_cuaca_uji'].find())
+    search_daerah = request.args.get('search_daerah', '').lower()
+    cuaca_data = list(dbcuaca['prakiraan_cuaca'].find())
 
-    # Bersihin suhu: dari "26 °C" jadi 26 (int)
     for item in cuaca_data:
-        item['suhu'] = int(item['suhu'].split()[0])
+        item['suhu'] = int(item['suhu'].split()[0])  # "26 °C" → 26
 
-    # List kecamatan unik buat dropdown
-    kecamatan_list = sorted(set(item['kecamatan'] for item in cuaca_data))
+    if search_daerah:
+        cuaca_data = [
+            item for item in cuaca_data
+            if search_daerah in item.get('kab_kota', '').lower() 
+            or search_daerah in item.get('kecamatan', '').lower()
+            or search_daerah in item.get('kelurahan', '').lower()
+        ]
 
-    # Filter berdasarkan kecamatan kalau dipilih
-    if kecamatan_filter:
-        cuaca_data = [item for item in cuaca_data if item['kecamatan'] == kecamatan_filter]
+    return render_template(
+        'cms_page/detail_cuaca.html',
+        cuaca_data=cuaca_data,
+        search_daerah=search_daerah
+    )
 
-    return render_template('cms_page/detail_cuaca.html', cuaca_data=cuaca_data, kecamatan_list=kecamatan_list, selected_kecamatan=kecamatan_filter)
 
 

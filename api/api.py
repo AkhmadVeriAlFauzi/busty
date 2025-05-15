@@ -29,7 +29,6 @@ def require_auth(f):
         if not api_key or api_key != API_KEY:
             return jsonify({'error': 'Unauthorized - Invalid or missing API key'}), 401
 
-        # Cek Bearer Token
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({'error': 'Unauthorized - Missing or invalid token'}), 401
@@ -98,14 +97,20 @@ def api_login():
 @api.route('/data-cuaca', methods=['GET'])
 @require_auth
 def get_data_cuaca():
-    kecamatan_filter = request.args.get('kecamatan')
-    cuaca_data = list(dbcuaca['prakiraan_cuaca_uji'].find())
+    search = request.args.get('search_daerah', '').lower()
+    cuaca_data = list(dbcuaca['prakiraan_cuaca'].find())
 
-    # Ubah semua ObjectId jadi str agar bisa di-JSON-kan
     for data in cuaca_data:
         data['_id'] = str(data['_id'])
+        data['suhu'] = int(data['suhu'].split()[0])
 
-    if kecamatan_filter:
-        cuaca_data = [data for data in cuaca_data if data['kecamatan'] == kecamatan_filter]
+    if search:
+        cuaca_data = [
+            data for data in cuaca_data
+            if search in data.get('kab_kota', '').lower() 
+            or search in data.get('kecamatan', '').lower()
+            or search in data.get('kelurahan', '').lower()
+        ]
 
     return jsonify(cuaca_data), 200
+

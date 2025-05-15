@@ -6,7 +6,7 @@ from api.api import api
 app = Flask(__name__)
 app.secret_key = 'busty_secret_key'
 
-CORS(app)  # ✅ Aktifkan CORS untuk seluruh route
+CORS(app) 
 
 # Register Blueprints
 app.register_blueprint(main)
@@ -14,4 +14,5 @@ app.register_blueprint(auth)
 app.register_blueprint(api)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
+

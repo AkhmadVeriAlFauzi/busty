@@ -4,49 +4,64 @@
 {% block page_title %}Detail Cuaca{% endblock %}
 
 {% block content %}
-<p>Berikut Detail Prediksi Cuaca Per Hari ini</p>
+<div class="space-y-6">
+    <p class="text-gray-700">Berikut Detail Prediksi Cuaca Per Hari ini</p>
 
-<!-- Dropdown filter kecamatan -->
-<form method="get" action="{{ url_for('main.detail_cuaca') }}">
-    <label for="kecamatan">Pilih Kecamatan:</label>
-    <select name="kecamatan" id="kecamatan" onchange="this.form.submit()">
-        <option value="">Semua Kecamatan</option>
-        {% for kecamatan in kecamatan_list %}
-            <option value="{{ kecamatan }}" {% if kecamatan == selected_kecamatan %}selected{% endif %}>{{ kecamatan }}</option>
-        {% endfor %}
-    </select>
-</form>
-<br>
+    <!-- Form pencarian daerah -->
+    <form method="get" action="{{ url_for('main.detail_cuaca') }}" class="flex gap-3 items-center">
+        <input type="text" name="search_daerah" id="search_daerah"
+            value="{{ search_daerah }}"
+            placeholder="Masukkan daerah (kota/kab/kec/kel)..."
+            class="px-4 py-2 border border-gray-300 rounded-lg shadow-sm w-full max-w-md focus:ring focus:ring-blue-200"
+            onchange="this.form.submit()">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            Cari
+        </button>
+    </form>
 
-<!-- Visualisasi Chart -->
-{% set grouped = {} %}
-{% for item in cuaca_data %}
-    {% set kec = item.kecamatan %}
-    {% if kec not in grouped %}
-        {% set _ = grouped.update({kec: []}) %}
-    {% endif %}
-    {% set _ = grouped[kec].append(item) %}
-{% endfor %}
+    <!-- Visualisasi per kabupaten/kota -->
+    {% set grouped = {} %}
+    {% for item in cuaca_data %}
+        {% set kota = item.kab_kota %}
+        {% if kota not in grouped %}
+            {% set _ = grouped.update({kota: []}) %}
+        {% endif %}
+        {% set _ = grouped[kota].append(item) %}
+    {% endfor %}
 
-{% for kecamatan, data in grouped.items() %}
-    <h2>{{ kecamatan }}</h2>
-    <canvas id="chart-{{ loop.index }}" width="400" height="200"></canvas>
+    {% for kab_kota, data in grouped.items() %}
+    <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">{{ kab_kota }}</h2>
+        <div class="overflow-x-auto">
+            <canvas id="chart-{{ loop.index }}" height="180"></canvas>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         const ctx{{ loop.index }} = document.getElementById('chart-{{ loop.index }}').getContext('2d');
         new Chart(ctx{{ loop.index }}, {
             type: 'bar',
             data: {
-                labels: {{ data | map(attribute = 'kelurahan') | list | tojson }},
+                labels: {{ data | map(attribute='kelurahan') | list | tojson }},
                 datasets: [{
                     label: 'Suhu (°C)',
-                    data: {{ data | map(attribute = 'suhu') | list | tojson }},
-                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
+                    data: {{ data | map(attribute='suhu') | list | tojson }},
+                    backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1,
+                    borderRadius: 5
                 }]
             },
             options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: {
+                        display: true,
+                        text: 'Perbandingan Suhu per Kelurahan'
+                    }
+                },
                 scales: {
                     y: {
                         suggestedMin: 0,
@@ -55,10 +70,17 @@
                             display: true,
                             text: 'Suhu (°C)'
                         }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Kelurahan'
+                        }
                     }
                 }
             }
         });
     </script>
-{% endfor %}
+    {% endfor %}
+</div>
 {% endblock %}
