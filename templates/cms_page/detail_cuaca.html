@@ -61,7 +61,7 @@ endblock %} {% block page_title %}Detail Cuaca{% endblock %} {% block content %}
             </div>
 
             <div class="text-sm text-gray-400">
-                Terakhir diperbarui: Hari ini
+                Terakhir diperbarui: {{ item.timestamp.strftime('%d %B %Y %H:%M') if item.timestamp else 'Tidak diketahui' }}
             </div>
         </div>
         {% endfor %}
