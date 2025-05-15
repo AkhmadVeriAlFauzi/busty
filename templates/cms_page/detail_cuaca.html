@@ -1,14 +1,9 @@
-{% extends 'cms_page/cmsbase.html' %}
-
-{% block title %}Busty | Detail Cuaca{% endblock %}
-{% block page_title %}Detail Cuaca{% endblock %}
-
-{% block content %}
+{% extends 'cms_page/cmsbase.html' %} {% block title %}Busty | Detail Cuaca{%
+endblock %} {% block page_title %}Detail Cuaca{% endblock %} {% block content %}
 <div class="space-y-6">
     <p class="text-gray-700">Berikut Detail Prediksi Cuaca Per Hari ini</p>
 
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-
         <form method="get" action="{{ url_for('main.detail_cuaca') }}" class="flex gap-3 items-center w-full max-w-2xl">
             <input type="text" name="search_daerah" id="search_daerah" value="{{ search_daerah }}"
                 placeholder="Masukkan daerah (kota/kab/kec/kel)..."
@@ -19,42 +14,44 @@
         </form>
 
         <!-- Tombol tampilan -->
-       <!-- Tombol toggle tampilan -->
-    <div class="flex gap-2">
-        <a href="?mode=card" title="Tampilan Card"
-           class="p-2 border rounded-lg hover:bg-gray-100 {% if mode == 'card' %}bg-blue-100 border-blue-400{% endif %}">
-            <i data-lucide="layout-dashboard" class="w-5 h-5 text-gray-700"></i>
-        </a>
-        <a href="?mode=chart" title="Tampilan Grafik"
-           class="p-2 border rounded-lg hover:bg-gray-100 {% if mode == 'chart' %}bg-blue-100 border-blue-400{% endif %}">
-            <i data-lucide="bar-chart-3" class="w-5 h-5 text-gray-700"></i>
-        </a>
-    </div>
+        <!-- Tombol toggle tampilan -->
+        <div class="flex gap-2">
+            <a href="{{ url_for('main.detail_cuaca', search_daerah=search_daerah, mode='card') }}" title="Tampilan Card"
+                class="p-2 border rounded-lg hover:bg-gray-100 {% if mode == 'card' %}bg-blue-100 border-blue-400{% endif %}">
+                <i data-lucide="layout-dashboard" class="w-5 h-5 text-gray-700"></i>
+            </a>
+
+            <a href="{{ url_for('main.detail_cuaca', search_daerah=search_daerah, mode='chart') }}"
+                title="Tampilan Grafik"
+                class="p-2 border rounded-lg hover:bg-gray-100 {% if mode == 'chart' %}bg-blue-100 border-blue-400{% endif %}">
+                <i data-lucide="bar-chart-3" class="w-5 h-5 text-gray-700"></i>
+            </a>
+        </div>
     </div>
 
+    {% if cuaca_data and mode != 'chart' %}
+    {% set grouped_by_provinsi = {} %}
+    {% for item in cuaca_data %}
+    {% set prov = item.provinsi %}
+    {% if prov not in grouped_by_provinsi %}
+    {% set _ = grouped_by_provinsi.update({prov: []}) %}
+    {% endif %}
+    {% set _ = grouped_by_provinsi[prov].append(item) %}
+    {% endfor %}
 
-    {% if cuaca_data %}
+    {% for provinsi, items in grouped_by_provinsi.items() %}
+    <h2 class="text-xl font-bold mt-8 mb-4">{{ provinsi }}</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {% for item in cuaca_data %}
+        {% for item in items %}
         <div
             class="bg-white rounded-xl shadow-lg p-5 border border-gray-200 flex flex-col gap-3 hover:shadow-xl transition duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-lg font-semibold text-gray-800">
-                        {{ item.kab_kota }}
-                    </h2>
-                    <p class="text-sm text-gray-500">
-                        {{ item.kecamatan }} - {{ item.kelurahan }}
-                    </p>
+                    <h3 class="text-lg font-semibold text-gray-800">{{ item.kab_kota }}</h3>
+                    <p class="text-sm text-gray-500">{{ item.kecamatan }} - {{ item.kelurahan }}</p>
                 </div>
                 <div class="text-4xl">
-                    {% if item.suhu >= 32 %}
-                    ☀️
-                    {% elif item.suhu >= 24 %}
-                    ⛅
-                    {% else %}
-                    🌧️
-                    {% endif %}
+                    {% if item.suhu >= 32 %}☀️{% elif item.suhu >= 24 %}⛅{% else %}🌧️{% endif %}
                 </div>
             </div>
 
@@ -69,19 +66,91 @@
         </div>
         {% endfor %}
     </div>
-    {% else %}
-    <div class="bg-yellow-100 text-yellow-800 px-4 py-3 rounded-lg">
-        {% if search_daerah %}
-        <p>Tidak ditemukan data untuk: <strong>{{ search_daerah }}</strong></p>
-        {% else %}
-        <p>Belum ada data cuaca tersedia saat ini.</p>
-        {% endif %}
-    </div>
+    {% endfor %}
     {% endif %}
+
 </div>
+
+{% if mode == 'chart' %}
+<!-- Chart Grouped by provinsi dan kab_kota -->
+<div class="space-y-8 mt-6">
+    {% set provinsi_grouped = {} %}
+    {% for item in cuaca_data %}
+        {% set prov = item.provinsi %}
+        {% if prov not in provinsi_grouped %}
+            {% set _ = provinsi_grouped.update({prov: {}}) %}
+        {% endif %}
+        {% set kab = item.kab_kota %}
+        {% if kab not in provinsi_grouped[prov] %}
+            {% set _ = provinsi_grouped[prov].update({kab: []}) %}
+        {% endif %}
+        {% set _ = provinsi_grouped[prov][kab].append(item) %}
+    {% endfor %}
+
+    {% for provinsi, kab_group in provinsi_grouped.items() %}
+    <h2 class="text-xl font-bold mt-10 mb-2">{{ provinsi }}</h2>
+
+    {% for kab_kota, data in kab_group.items() %}
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">{{ kab_kota }}</h3>
+        <canvas id="chart-{{ provinsi | replace(' ', '') }}-{{ loop.index }}" height="200"></canvas>
+    </div>
+    {% endfor %}
+    {% endfor %}
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Chart Rendering Script -->
+<script>
+    {% for provinsi, kab_group in provinsi_grouped.items() %}
+        {% for kab_kota, data in kab_group.items() %}
+        const ctx_{{ provinsi | replace(' ', '') }}_{{ loop.index }} = document.getElementById('chart-{{ provinsi | replace(' ', '') }}-{{ loop.index }}').getContext('2d');
+        new Chart(ctx_{{ provinsi | replace(' ', '') }}_{{ loop.index }}, {
+            type: 'bar',
+            data: {
+                labels: {{ data | map(attribute='kecamatan') | list | tojson }},
+                datasets: [{
+                    label: 'Suhu (°C)',
+                    data: {{ data | map(attribute='suhu') | list | tojson }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return context.raw + '°C';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: 50,
+                        title: { display: true, text: 'Suhu (°C)' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Kecamatan' }
+                    }
+                }
+            }
+        });
+        {% endfor %}
+    {% endfor %}
+</script>
+{% endif %}
 
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
-    lucide.createIcons();
+    lucide.createIcons()
 </script>
 {% endblock %}

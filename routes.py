@@ -80,26 +80,34 @@ def logout():
 
 @main.route('/detail-cuaca')
 def detail_cuaca():
+    mode = request.args.get('mode', 'card')
     search_daerah = request.args.get('search_daerah', '').lower()
     
+    # Ambil semua data dari MongoDB
     cuaca_data = list(dbcuaca['prakiraan_cuaca'].find())
 
+    # Parsing suhu + handle error kalau formatnya aneh
     for item in cuaca_data:
-        item['suhu'] = int(item['suhu'].split()[0])
+        suhu_str = item.get('suhu', '0')
+        try:
+            # Ambil angka pertama dari suhu
+            item['suhu'] = int(suhu_str.split()[0])
+        except:
+            item['suhu'] = 0  # Default ke 0 kalau gagal parsing
 
+    # Filter data berdasarkan input search
     if search_daerah:
         cuaca_data = [
             item for item in cuaca_data
-            if search_daerah in item.get('kab_kota', '').lower()
-            or search_daerah in item.get('kecamatan', '').lower()
-            or search_daerah in item.get('kelurahan', '').lower()
+            if search_daerah in (item.get('provinsi') or '').lower()
+            or search_daerah in (item.get('kab_kota') or '').lower()
+            or search_daerah in (item.get('kecamatan') or '').lower()
+            or search_daerah in (item.get('kelurahan') or '').lower()
         ]
 
     return render_template(
         'cms_page/detail_cuaca.html',
         cuaca_data=cuaca_data,
+        mode=mode,
         search_daerah=search_daerah
     )
-
-
-
