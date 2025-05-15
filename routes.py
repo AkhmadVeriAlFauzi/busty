@@ -81,15 +81,16 @@ def logout():
 @main.route('/detail-cuaca')
 def detail_cuaca():
     search_daerah = request.args.get('search_daerah', '').lower()
+    
     cuaca_data = list(dbcuaca['prakiraan_cuaca'].find())
 
     for item in cuaca_data:
-        item['suhu'] = int(item['suhu'].split()[0])  # "26 °C" → 26
+        item['suhu'] = int(item['suhu'].split()[0])
 
     if search_daerah:
         cuaca_data = [
             item for item in cuaca_data
-            if search_daerah in item.get('kab_kota', '').lower() 
+            if search_daerah in item.get('kab_kota', '').lower()
             or search_daerah in item.get('kecamatan', '').lower()
             or search_daerah in item.get('kelurahan', '').lower()
         ]

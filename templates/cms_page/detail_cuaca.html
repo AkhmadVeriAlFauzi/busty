@@ -7,80 +7,81 @@
 <div class="space-y-6">
     <p class="text-gray-700">Berikut Detail Prediksi Cuaca Per Hari ini</p>
 
-    <!-- Form pencarian daerah -->
-    <form method="get" action="{{ url_for('main.detail_cuaca') }}" class="flex gap-3 items-center">
-        <input type="text" name="search_daerah" id="search_daerah"
-            value="{{ search_daerah }}"
-            placeholder="Masukkan daerah (kota/kab/kec/kel)..."
-            class="px-4 py-2 border border-gray-300 rounded-lg shadow-sm w-full max-w-md focus:ring focus:ring-blue-200"
-            onchange="this.form.submit()">
-        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-            Cari
-        </button>
-    </form>
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
 
-    <!-- Visualisasi per kabupaten/kota -->
-    {% set grouped = {} %}
-    {% for item in cuaca_data %}
-        {% set kota = item.kab_kota %}
-        {% if kota not in grouped %}
-            {% set _ = grouped.update({kota: []}) %}
-        {% endif %}
-        {% set _ = grouped[kota].append(item) %}
-    {% endfor %}
+        <form method="get" action="{{ url_for('main.detail_cuaca') }}" class="flex gap-3 items-center w-full max-w-2xl">
+            <input type="text" name="search_daerah" id="search_daerah" value="{{ search_daerah }}"
+                placeholder="Masukkan daerah (kota/kab/kec/kel)..."
+                class="px-4 py-2 border border-gray-300 rounded-lg shadow-sm w-full max-w-sm focus:ring focus:ring-blue-200" />
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                Cari
+            </button>
+        </form>
 
-    {% for kab_kota, data in grouped.items() %}
-    <div class="bg-white rounded-2xl shadow-md p-6 mb-6">
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">{{ kab_kota }}</h2>
-        <div class="overflow-x-auto">
-            <canvas id="chart-{{ loop.index }}" height="180"></canvas>
-        </div>
+        <!-- Tombol tampilan -->
+       <!-- Tombol toggle tampilan -->
+    <div class="flex gap-2">
+        <a href="?mode=card" title="Tampilan Card"
+           class="p-2 border rounded-lg hover:bg-gray-100 {% if mode == 'card' %}bg-blue-100 border-blue-400{% endif %}">
+            <i data-lucide="layout-dashboard" class="w-5 h-5 text-gray-700"></i>
+        </a>
+        <a href="?mode=chart" title="Tampilan Grafik"
+           class="p-2 border rounded-lg hover:bg-gray-100 {% if mode == 'chart' %}bg-blue-100 border-blue-400{% endif %}">
+            <i data-lucide="bar-chart-3" class="w-5 h-5 text-gray-700"></i>
+        </a>
+    </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        const ctx{{ loop.index }} = document.getElementById('chart-{{ loop.index }}').getContext('2d');
-        new Chart(ctx{{ loop.index }}, {
-            type: 'bar',
-            data: {
-                labels: {{ data | map(attribute='kelurahan') | list | tojson }},
-                datasets: [{
-                    label: 'Suhu (°C)',
-                    data: {{ data | map(attribute='suhu') | list | tojson }},
-                    backgroundColor: 'rgba(59, 130, 246, 0.6)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 1,
-                    borderRadius: 5
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'top' },
-                    title: {
-                        display: true,
-                        text: 'Perbandingan Suhu per Kelurahan'
-                    }
-                },
-                scales: {
-                    y: {
-                        suggestedMin: 0,
-                        suggestedMax: 50,
-                        title: {
-                            display: true,
-                            text: 'Suhu (°C)'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Kelurahan'
-                        }
-                    }
-                }
-            }
-        });
-    </script>
-    {% endfor %}
+
+    {% if cuaca_data %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for item in cuaca_data %}
+        <div
+            class="bg-white rounded-xl shadow-lg p-5 border border-gray-200 flex flex-col gap-3 hover:shadow-xl transition duration-300">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-800">
+                        {{ item.kab_kota }}
+                    </h2>
+                    <p class="text-sm text-gray-500">
+                        {{ item.kecamatan }} - {{ item.kelurahan }}
+                    </p>
+                </div>
+                <div class="text-4xl">
+                    {% if item.suhu >= 32 %}
+                    ☀️
+                    {% elif item.suhu >= 24 %}
+                    ⛅
+                    {% else %}
+                    🌧️
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center">
+                <p class="text-gray-600">Suhu:</p>
+                <p class="text-xl font-bold text-blue-600">{{ item.suhu }}°C</p>
+            </div>
+
+            <div class="text-sm text-gray-400">
+                Terakhir diperbarui: Hari ini
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-yellow-100 text-yellow-800 px-4 py-3 rounded-lg">
+        {% if search_daerah %}
+        <p>Tidak ditemukan data untuk: <strong>{{ search_daerah }}</strong></p>
+        {% else %}
+        <p>Belum ada data cuaca tersedia saat ini.</p>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    lucide.createIcons();
+</script>
 {% endblock %}
