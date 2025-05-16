@@ -62,17 +62,9 @@ def forgot_password():
 def dashboard():
     return render_template('cms_page/dashboard.html')
 
-@main.route('/admin/posts')
-def post_list():
-    return render_template('cms_page/post_list.html')
-
-@main.route('/admin/editor')
-def editor():
-    return render_template('cms_page/editor.html')
-
-@main.route('/settings')
-def settings():
-    return render_template('cms_page/settings.html')
+@main.route('/pengguna')
+def pengguna():
+    return render_template('cms_page/user.html')
 
 @auth.route('/logout')
 def logout():

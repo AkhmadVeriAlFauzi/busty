@@ -1,0 +1,54 @@
+{% extends 'cms_page/cmsbase.html' %}
+
+{% block title %}Busty | Pengguna{% endblock %}
+{% block page_title %}Manajemen Pengguna{% endblock %}
+
+{% block content %}
+<div class="flex">
+
+
+  <!-- Main Content Area -->
+  <main class="flex-1 p-8 bg-gray-100 min-h-screen">
+
+    <!-- Button tambah pengguna -->
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-3xl font-semibold">Daftar Pengguna</h3>
+      <a href="" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">Tambah Pengguna</a>
+    </div>
+
+    <!-- Tabel pengguna -->
+    <div class="overflow-x-auto bg-white rounded shadow">
+      <table class="min-w-full table-auto border-collapse">
+        <thead class="bg-blue-100 text-black">
+          <tr>
+            <th class="py-3 px-6 text-left font-normal">ID</th>
+            <th class="py-3 px-6 text-left font-normal">Nama</th>
+            <th class="py-3 px-6 text-left font-normal">Email</th>
+            <th class="py-3 px-6 text-left font-normal">Role</th>
+            <th class="py-3 px-6 text-center font-normal">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr class="border-b hover:bg-gray-100">
+            <td class="py-3 px-6">{{ user.id }}</td>
+            <td class="py-3 px-6">{{ user.name }}</td>
+            <td class="py-3 px-6">{{ user.email }}</td>
+            <td class="py-3 px-6">{{ user.role }}</td>
+            <td class="py-3 px-6 text-center space-x-2">
+              <a href="" class="text-blue-600 hover:underline">Edit</a>
+              <a href="" class="text-red-600 hover:underline" onclick="return confirm('Yakin ingin menghapus pengguna ini?');">Hapus</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="5" class="py-4 px-6 text-center text-gray-500">Belum ada pengguna.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+</div>
+{% endblock %}
