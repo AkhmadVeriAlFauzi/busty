@@ -64,7 +64,14 @@ def dashboard():
 
 @main.route('/pengguna')
 def pengguna():
-    return render_template('cms_page/user.html')
+    search_query = request.args.get('search', '').strip().lower()
+    users = user_model.get_all_users()
+
+    if search_query:
+        users = [user for user in users if search_query in user.get('username', '').lower()]
+
+    return render_template('cms_page/user.html', users=users)
+
 
 @auth.route('/logout')
 def logout():

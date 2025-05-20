@@ -5,18 +5,24 @@
 
 {% block content %}
 <div class="flex">
-
-
-  <!-- Main Content Area -->
   <main class="flex-1 p-8 bg-gray-100 min-h-screen">
 
-    <!-- Button tambah pengguna -->
+    <!-- Header -->
     <div class="flex justify-between items-center mb-6">
       <h3 class="text-3xl font-semibold">Daftar Pengguna</h3>
-      <a href="" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition">Tambah Pengguna</a>
+      <form method="get" class="flex">
+    <input type="text" name="search" placeholder="Cari nama pengguna..."
+      value="{{ request.args.get('search', '') }}"
+      class="border rounded-l px-4 py-2 focus:outline-none focus:ring focus:border-blue-300" />
+    <button type="submit"
+      class="bg-blue-600 text-white px-4 py-2 rounded-r hover:bg-blue-700 transition">
+      Cari
+    </button>
+  </form>
+
     </div>
 
-    <!-- Tabel pengguna -->
+    <!-- Tabel -->
     <div class="overflow-x-auto bg-white rounded shadow">
       <table class="min-w-full table-auto border-collapse">
         <thead class="bg-blue-100 text-black">
@@ -24,20 +30,18 @@
             <th class="py-3 px-6 text-left font-normal">ID</th>
             <th class="py-3 px-6 text-left font-normal">Nama</th>
             <th class="py-3 px-6 text-left font-normal">Email</th>
-            <th class="py-3 px-6 text-left font-normal">Role</th>
             <th class="py-3 px-6 text-center font-normal">Aksi</th>
           </tr>
         </thead>
         <tbody>
           {% for user in users %}
           <tr class="border-b hover:bg-gray-100">
-            <td class="py-3 px-6">{{ user.id }}</td>
-            <td class="py-3 px-6">{{ user.name }}</td>
+            <td class="py-3 px-6">{{ user._id }}</td>
+            <td class="py-3 px-6">{{ user.username }}</td>
             <td class="py-3 px-6">{{ user.email }}</td>
-            <td class="py-3 px-6">{{ user.role }}</td>
             <td class="py-3 px-6 text-center space-x-2">
-              <a href="" class="text-blue-600 hover:underline">Edit</a>
-              <a href="" class="text-red-600 hover:underline" onclick="return confirm('Yakin ingin menghapus pengguna ini?');">Hapus</a>
+              <a href="#" class="text-white bg-green-500 border hover:bg-green-600 px-4 py-1.5 rounded-lg">Edit</a>
+              <a href="#" class="text-white bg-red-500 border hover:bg-red-900 px-4 py-1.5 rounded-lg" onclick="return confirm('Yakin ingin menghapus pengguna ini?');">Hapus</a>
             </td>
           </tr>
           {% else %}

@@ -25,3 +25,6 @@ class User:
 
     def find_by_id(self, user_id):
         return self.collection.find_one({'_id': ObjectId(user_id)})
+    
+    def get_all_users(self):
+        return list(self.collection.find())
