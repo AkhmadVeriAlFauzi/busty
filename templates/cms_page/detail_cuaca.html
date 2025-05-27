@@ -60,6 +60,11 @@ endblock %} {% block page_title %}Detail Cuaca{% endblock %} {% block content %}
                 <p class="text-xl font-bold text-blue-600">{{ item.suhu }}°C</p>
             </div>
 
+            <div class="flex justify-between items-center">
+                <p class="text-gray-600">Cuaca:</p>
+                <p class="text-gray-800 font-medium">{{ item.cuaca }}</p>
+            </div>
+
             <div class="text-sm text-gray-400">
                 Terakhir diperbarui: {{ item.timestamp.strftime('%d %B %Y %H:%M') if item.timestamp else 'Tidak diketahui' }}
             </div>

@@ -93,6 +93,8 @@ def detail_cuaca():
             item['suhu'] = int(suhu_str.split()[0])
         except:
             item['suhu'] = 0  # Default ke 0 kalau gagal parsing
+            
+        item['cuaca'] = item.get('cuaca', 'Tidak diketahui')    
 
     # Filter data berdasarkan input search
     if search_daerah:
