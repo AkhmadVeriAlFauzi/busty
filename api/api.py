@@ -1,4 +1,6 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
+from routes import generate_otp, send_otp_email
+from werkzeug.security import generate_password_hash
 from models.user import User
 from pymongo import MongoClient
 from werkzeug.security import check_password_hash
@@ -57,6 +59,9 @@ def protected_route(current_user):
         }
     })
 
+
+# api register
+
 @api.route('/register', methods=['POST'])
 def api_register():
     data = request.get_json()
@@ -72,8 +77,49 @@ def api_register():
     if user_model.find_by_username(username):
         return jsonify({'status': 'error', 'message': 'Username sudah terdaftar.'}), 409
 
-    user_model.create_user(username, email, no_hp, password)
-    return jsonify({'status': 'success', 'message': 'Registrasi berhasil.'}), 201
+    # Generate OTP dan simpan sementara
+    otp = generate_otp()
+    session['otp'] = otp
+    session['user_temp'] = {
+        'username': username,
+        'email': email,
+        'no_hp': no_hp,
+        'password': generate_password_hash(password)
+    }
+
+    send_otp_email(email, otp)
+
+    return jsonify({'status': 'pending', 'message': 'OTP telah dikirim ke email kamu.'}), 200
+
+@api.route('/verify-otp', methods=['POST'])
+def api_verify_otp():
+    data = request.get_json()
+    input_otp = data.get('otp')
+
+    if not input_otp:
+        return jsonify({'status': 'error', 'message': 'OTP harus diisi.'}), 400
+
+    otp = session.get('otp')
+    user_temp = session.get('user_temp')
+
+    if not user_temp:
+        return jsonify({'status': 'error', 'message': 'Session expired. Daftar ulang.'}), 400
+
+    if input_otp == otp:
+        user_model.create_user(
+            user_temp['username'],
+            user_temp['email'],
+            user_temp['no_hp'],
+            user_temp['password']
+        )
+        session.pop('otp', None)
+        session.pop('user_temp', None)
+        return jsonify({'status': 'success', 'message': 'Registrasi berhasil.'}), 201
+    else:
+        return jsonify({'status': 'error', 'message': 'OTP salah.'}), 400
+
+
+
 
 @api.route('/login', methods=['POST'])
 def api_login():

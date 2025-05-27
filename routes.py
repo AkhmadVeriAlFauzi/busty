@@ -1,7 +1,26 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from bson import ObjectId
 from models.user import User
 from pymongo import MongoClient
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
+from flask_mail import Message
+from extensions import mail, mongo
+from models.user import User
+from dotenv import load_dotenv
+from imap_tools import MailBox, AND
+from datetime import datetime, timedelta
+
+import os
+import re
+import random
+import bcrypt
+import smtplib
+
+# Load .env file
+load_dotenv()
+email_user = os.getenv('EMAIL_USER')
+email_pass = os.getenv('EMAIL_PASS')
+
 
 main = Blueprint('main', __name__)
 client = MongoClient('mongodb+srv://user:OG2QqFuCYwkoWBek@capstone.fqvkpyn.mongodb.net/?retryWrites=true&w=majority')
@@ -9,7 +28,44 @@ db = client['busty_db']
 dbcuaca = client['cuaca_db']
 user_model = User(db)
 
+
+
 auth = Blueprint('auth', __name__, url_prefix='/auth')
+
+def generate_otp():
+    return str(random.randint(100000, 999999))
+
+def send_otp_email(email, otp, expiry_minutes=5):
+    msg = Message('Kode OTP Busty Kamu', recipients=[email])
+    msg.body = f'''
+    Kode OTP kamu adalah: {otp}
+    
+    OTP ini hanya berlaku selama {expiry_minutes} menit.
+    Jangan bagikan kode ini ke siapa pun.
+    '''
+    mail.send(msg)
+
+
+def check_latest_email():
+    with MailBox('imap.gmail.com').login(email_user, email_pass, 'INBOX') as mailbox:
+        emails = list(mailbox.fetch(AND(seen=False), limit=1, reverse=True))
+        if len(emails) == 0:
+            return None
+        return emails[0]
+
+def extract_link(email_text):
+    url_pattern = re.compile(r'https?://[^\s]+')
+    match = url_pattern.search(email_text)
+    if match:
+        return match.group()
+    return None
+
+def extract_otp(email_text):
+    otp_pattern = re.compile(r'\b\d{6}\b')
+    match = otp_pattern.search(email_text)
+    if match:
+        return match.group()
+    return None
 
 @main.route('/')
 def index():
@@ -21,36 +77,108 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
 
+        # Cari user berdasarkan email
         user = user_model.find_by_email(email)
+
+        if not user:
+            flash('Email tidak terdaftar.', 'danger')
+            return redirect(url_for('auth.login'))
+        
         if user and check_password_hash(user['password'], password):
-            flash('Login berhasil!', 'success')
+        # Login berhasil
+            session['user_id'] = str(user['_id'])
+            session['username'] = user['username']
+            flash(f'Selamat datang, {user["username"]}!', 'success')
             return redirect(url_for('main.dashboard'))
         else:
-            flash('Email atau password salah.', 'danger')
+            flash('Password salah.', 'danger')
             return redirect(url_for('auth.login'))
-
+        
     return render_template('auth/login.html')
 
 @auth.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        no_hp = request.form.get('no_hp')
-        password = request.form.get('password')
+        username = request.form['username']
+        email = request.form['email']
+        no_hp = request.form['no_hp']
+        password = request.form['password']
+        
+         # Hash password pake bcrypt (hasilnya bytes, convert ke str agar bisa disimpan di session/db)
 
-        if user_model.find_by_email(email):
-            flash('Email sudah terdaftar.', 'danger')
-            return redirect(url_for('auth.register'))
-        if user_model.find_by_username(username):
-            flash('Username sudah terdaftar.', 'danger')
-            return redirect(url_for('auth.register'))
 
-        user_model.create_user(username, email, no_hp, password)
-        flash('Registrasi berhasil! Silakan login.', 'success')
-        return redirect(url_for('auth.login'))
+        # Simpan data ke session sementara
+        otp = generate_otp()
+        session['otp'] = otp
+        session['otp_expired_at'] = (datetime.utcnow() + timedelta(minutes=1)).isoformat()  # ⏳ expired 5 menit
+        session['user_temp'] = {
+            'username': username,
+            'email': email,
+            'no_hp': no_hp,
+            'password': generate_password_hash(password)
+        }
+
+        send_otp_email(email, otp, 1)  # kirim email + info expired
+
+
+        flash('Kode OTP telah dikirim ke email kamu.', 'info')
+        return redirect(url_for('auth.verify_otp'))
 
     return render_template('auth/register.html')
+
+
+@auth.route('/verify-otp', methods=['GET', 'POST'])
+def verify_otp():
+    if request.method == 'POST':
+        input_otp = request.form['otp']
+        otp = session.get('otp')
+        otp_expired_at = session.get('otp_expired_at')
+        user_temp = session.get('user_temp')
+
+        if not user_temp or not otp_expired_at:
+            flash('Session expired. Silakan register ulang.', 'danger')
+            return redirect(url_for('auth.register'))
+
+        # Cek apakah OTP sudah expired
+        expired_time = datetime.fromisoformat(otp_expired_at)
+        if datetime.utcnow() > expired_time:
+            flash('Kode OTP telah kedaluwarsa. Silakan klik "Kirim ulang OTP".', 'danger')
+            return redirect(url_for('auth.verify_otp'))
+
+        if input_otp == otp:
+            user_model.create_user(
+                user_temp['username'],
+                user_temp['email'],
+                user_temp['no_hp'],
+                user_temp['password']
+            )
+            session.pop('otp', None)
+            session.pop('otp_expired_at', None)
+            session.pop('user_temp', None)
+
+            flash('Registrasi berhasil. Silakan login.', 'success')
+            return redirect(url_for('auth.login'))
+        else:
+            flash('OTP salah. Silakan coba lagi.', 'danger')
+
+    return render_template('auth/verify_otp.html')
+
+@auth.route('/resend-otp', methods=['POST'])
+def resend_otp():
+    user_temp = session.get('user_temp')
+    if not user_temp:
+        flash('Session expired. Silakan register ulang.', 'danger')
+        return redirect(url_for('auth.register'))
+
+    otp = generate_otp()
+    session['otp'] = otp
+    session['otp_expired_at'] = (datetime.utcnow() + timedelta(minutes=5)).isoformat()
+    send_otp_email(user_temp['email'], otp)
+
+    flash('Kode OTP baru telah dikirim ke email kamu. Berlaku selama 1 menit.', 'info')
+    return redirect(url_for('auth.verify_otp'))
+
+
 
 @auth.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():

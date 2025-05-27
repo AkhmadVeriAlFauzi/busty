@@ -1,4 +1,7 @@
-from datetime import datetime
+import random
+import smtplib
+from email.mime.text import MIMEText
+from datetime import datetime, timedelta
 from bson import ObjectId
 from werkzeug.security import generate_password_hash
 
@@ -7,13 +10,14 @@ class User:
         self.collection = db['user']
 
     def create_user(self, username, email, no_hp, password):
-        hashed_password = generate_password_hash(password)
+        # hashed_password = generate_password_hash(password)
         user_data = {
             'username': username,
             'email': email,
             'no_hp': no_hp,
-            'password': hashed_password,
-            'created_at': datetime.utcnow()
+            'password': password,
+            'created_at': datetime.utcnow(),
+            'is_verified': False  # default belum verifikasi
         }
         return self.collection.insert_one(user_data)
 
@@ -28,3 +32,24 @@ class User:
     
     def get_all_users(self):
         return list(self.collection.find())
+
+    def set_otp(self, email, otp, expired_at):
+        return self.collection.update_one(
+            {'email': email},
+            {'$set': {'otp': otp, 'otp_expired': expired_at, 'is_verified': False}}
+        )
+
+    def verify_otp(self, email, otp):
+        user = self.find_by_email(email)
+        if not user:
+            return False, "User tidak ditemukan"
+        if user.get('otp') != otp:
+            return False, "Kode OTP salah"
+        if datetime.utcnow() > user.get('otp_expired', datetime.utcnow()):
+            return False, "Kode OTP sudah expired"
+        # Update user jadi verified
+        self.collection.update_one(
+            {'email': email},
+            {'$set': {'is_verified': True}, '$unset': {'otp': '', 'otp_expired': ''}}
+        )
+        return True, "Verifikasi berhasil"
