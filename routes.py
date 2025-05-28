@@ -35,7 +35,7 @@ auth = Blueprint('auth', __name__, url_prefix='/auth')
 def generate_otp():
     return str(random.randint(100000, 999999))
 
-def send_otp_email(email, otp, expiry_minutes=5):
+def send_otp_email(email, otp, expiry_minutes=1):
     msg = Message('Kode OTP Busty Kamu', recipients=[email])
     msg.body = f'''
     Kode OTP kamu adalah: {otp}
@@ -103,9 +103,11 @@ def register():
         email = request.form['email']
         no_hp = request.form['no_hp']
         password = request.form['password']
+        confirm_password = request.form['confirm_password']
         
-         # Hash password pake bcrypt (hasilnya bytes, convert ke str agar bisa disimpan di session/db)
-
+        if password != confirm_password:
+            flash('Password dan konfirmasi tidak sama.', 'danger')
+            return redirect(url_for('auth.register'))
 
         # Simpan data ke session sementara
         otp = generate_otp()
@@ -115,7 +117,7 @@ def register():
             'username': username,
             'email': email,
             'no_hp': no_hp,
-            'password': generate_password_hash(password)
+            'password': generate_password_hash(password),
         }
 
         send_otp_email(email, otp, 1)  # kirim email + info expired

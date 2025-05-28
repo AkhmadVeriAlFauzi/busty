@@ -17,7 +17,7 @@ class User:
             'no_hp': no_hp,
             'password': password,
             'created_at': datetime.utcnow(),
-            'is_verified': False  # default belum verifikasi
+            # 'is_verified': False  # default belum verifikasi
         }
         return self.collection.insert_one(user_data)
 
