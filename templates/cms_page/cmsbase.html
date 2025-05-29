@@ -1,65 +1,126 @@
 <!-- templates/cms/cmsbase.html -->
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Dashboard CMS{% endblock %}</title>
     <link rel="icon" href="{{ url_for('static', filename='image/busty.png') }}" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
 
     <!-- CDN Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- tailwind config langsung di inline -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                        jakarta: ['Plus Jakarta Sans', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
 </head>
-<body class="bg-gray-100">
+
+<body class="bg-gray-100 font-jakarta">
 
     <!-- Sidebar Container -->
     <div class="flex">
         <!-- Sidebar -->
-        <div class="bg-white text-gray-900 w-64 h-screen fixed top-0 left-0 transform transition-all duration-300 ease-in-out sidebar shadow-lg">
+        <div
+            class="bg-white text-gray-900 w-60 h-screen fixed top-0 left-0 transform transition-all duration-300 ease-in-out sidebar shadow-lg">
             <div class="p-6">
-                <h2 class="text-2xl font-semibold text-blue-800">Admin CMS</h2>
+                <h2 class="text-xl font-semibold text-blue-800">Admin CMS</h2>
                 <ul class="mt-8 space-y-4">
                     <!-- Dashboard Menu Item -->
                     <li>
-                        <a href="{{ url_for('main.dashboard') }}" class="group flex items-center text-lg space-x-3 hover:bg-blue-100 py-2 px-4 rounded-md transition-colors">
+                        <a href="{{ url_for('main.dashboard') }}"
+                            class="group flex items-center text-md space-x-3 py-2  rounded-md transition-colors">
                             <!-- Icon -->
-                            <img src="{{ url_for('static', filename='image/asethome.svg') }}" alt="Dashboard Icon" class="w-5 h-5 object-contain group-hover:brightness-110 transition" />
-                            <span>Dashboard</span>
+                            <img src="{{ url_for('static', filename='image/asethome.svg') }}" alt="Dashboard Icon"
+                                class="w-4 h-4 object-contain group-hover:brightness-110 transition" />
+                            <span class="">Dashboard</span>
                         </a>
                     </li>
                     <!-- Posts Menu Item -->
                     <li>
-                        <a href="{{ url_for('main.detail_cuaca') }}" class="group flex items-center text-lg space-x-3 hover:bg-blue-100 py-2 px-4 rounded-md transition-colors">
+                        <a href="{{ url_for('main.detail_cuaca') }}"
+                            class="group flex items-center text-md space-x-3 py-2 rounded-md transition-colors">
                             <!-- Icon -->
-                            <img src="{{ url_for('static', filename='image/asetweather.svg') }}" alt="Dashboard Icon" class="w-5 h-5 object-contain group-hover:brightness-110 transition" />
+                            <img src="{{ url_for('static', filename='image/asetweather.svg') }}" alt="Dashboard Icon"
+                                class="w-4 h-4 object-contain group-hover:brightness-110 transition" />
                             <span>Detail Cuaca</span>
                         </a>
                     </li>
                     <!-- Editor Menu Item -->
                     <li>
-                        <a href="{{url_for('main.pengguna')}}" class="group flex items-center text-lg space-x-3 hover:bg-blue-100 py-2 px-4 rounded-md transition-colors">
+                        <a href="{{url_for('main.pengguna')}}"
+                            class="group flex items-center text-md space-x-3 py-2  rounded-md transition-colors">
                             <!-- Icon -->
-                            <img src="{{ url_for('static', filename='image/asetuser.svg') }}" alt="Dashboard Icon" class="w-5 h-5 object-contain group-hover:brightness-110 transition" />
+                            <img src="{{ url_for('static', filename='image/asetuser.svg') }}" alt="Dashboard Icon"
+                                class="w-4 h-4 object-contain group-hover:brightness-110 transition" />
                             <span>Pengguna</span>
                         </a>
                     </li>
                     <!-- Settings Menu Item -->
                     <li>
-                        <a href="" class="group flex items-center text-lg space-x-3 hover:bg-blue-100 py-2 px-4 rounded-md transition-colors">
+                        <a href="" class="group flex items-center text-md space-x-3 py-2  rounded-md transition-colors">
                             <!-- Icon -->
-                            <svg class="w-5 h-5 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="w-4 h-4 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none"
+                                stroke="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M19 13l-4 4-4-4"></path>
                                 <path d="M5 7l4-4 4 4"></path>
                                 <path d="M9 12h6"></path>
                             </svg>
-                            <span>Settings</span>
+                            <span>Rute</span>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="" class="group flex items-center text-md space-x-3 py-2  rounded-md transition-colors">
+                            <!-- Icon -->
+                            <svg class="w-4 h-4 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none"
+                                stroke="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 13l-4 4-4-4"></path>
+                                <path d="M5 7l4-4 4 4"></path>
+                                <path d="M9 12h6"></path>
+                            </svg>
+                            <span>Armada</span>
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="" class="group flex items-center text-md space-x-3 py-2  rounded-md transition-colors">
+                            <!-- Icon -->
+                            <svg class="w-4 h-4 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none"
+                                stroke="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M19 13l-4 4-4-4"></path>
+                                <path d="M5 7l4-4 4 4"></path>
+                                <path d="M9 12h6"></path>
+                            </svg>
+                            <span>Artikel</span>
                         </a>
                     </li>
                     <!-- Logout Menu Item -->
                     <li>
-                        <a href="{{ url_for('auth.logout') }}" class="group flex items-center text-lg space-x-3 hover:bg-blue-100 py-2 px-4 rounded-md transition-colors">
+                        <a href="{{ url_for('auth.logout') }}"
+                            class="group flex items-center text-md space-x-3 py-2 rounded-md transition-colors">
                             <!-- Icon -->
-                            <svg class="w-5 h-5 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg class="w-4 h-4 text-gray-500 group-hover:text-blue-600 transition-colors" fill="none"
+                                stroke="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M10 17l5-5-5-5"></path>
                                 <path d="M15 12H3"></path>
                             </svg>
@@ -71,10 +132,10 @@
         </div>
 
         <!-- Main Content -->
-        <div class="flex-1 p-8 ml-64">
+        <div class="flex-1 p-8 ml-60">
             <!-- Page Title Box -->
-            <div class="bg-white p-4 rounded-md mb-8 shadow-sm">
-                <h2 class="text-2xl font-semibold text-blue-800">{% block page_title %}Dashboard{% endblock %}</h2>
+            <div class="mb-4 ">
+                <h2 class="text-2xl font-semibold text-black">{% block page_title %}Dashboard{% endblock %}</h2>
             </div>
 
             <!-- Content goes here -->
@@ -84,4 +145,5 @@
     </div>
 
 </body>
+
 </html>

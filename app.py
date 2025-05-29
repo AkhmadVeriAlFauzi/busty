@@ -5,12 +5,16 @@ from extensions import mongo, mail
 from api.api import api
 from dotenv import load_dotenv
 import os
+import redis
+import uuid
 
 # ⏬ Load isi .env
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
+
+r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 CORS(app) 
 

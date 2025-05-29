@@ -5,22 +5,22 @@
 
 {% block content %}
 <div class="flex">
-  <main class="flex-1 p-8 bg-gray-100 min-h-screen">
+  <main class="flex-1 bg-gray-100 min-h-screen">
 
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
-      <h3 class="text-3xl font-semibold">Daftar Pengguna</h3>
-      <form method="get" class="flex">
-    <input type="text" name="search" placeholder="Cari nama pengguna..."
-      value="{{ request.args.get('search', '') }}"
-      class="border rounded-l px-4 py-2 focus:outline-none focus:ring focus:border-blue-300" />
-    <button type="submit"
-      class="bg-blue-600 text-white px-4 py-2 rounded-r hover:bg-blue-700 transition">
-      Cari
-    </button>
-  </form>
-
+      <h3 class="text-xl font-regular">Daftar Pengguna</h3>
+      <form method="get" class="flex gap-3 items-center w-full max-w-2xl">
+        <input type="text" name="search" placeholder="Cari nama pengguna..."
+          value="{{ request.args.get('search', '') }}"
+          class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-300 transition duration-200" />
+        <button type="submit"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-200">
+          Cari
+        </button>
+      </form>
     </div>
+
 
     <!-- Tabel -->
     <div class="overflow-x-auto bg-white rounded shadow">
@@ -41,7 +41,8 @@
             <td class="py-3 px-6">{{ user.email }}</td>
             <td class="py-3 px-6 text-center space-x-2">
               <a href="#" class="text-white bg-green-500 border hover:bg-green-600 px-4 py-1.5 rounded-lg">Edit</a>
-              <a href="#" class="text-white bg-red-500 border hover:bg-red-900 px-4 py-1.5 rounded-lg" onclick="return confirm('Yakin ingin menghapus pengguna ini?');">Hapus</a>
+              <a href="#" class="text-white bg-red-500 border hover:bg-red-900 px-4 py-1.5 rounded-lg"
+                onclick="return confirm('Yakin ingin menghapus pengguna ini?');">Hapus</a>
             </td>
           </tr>
           {% else %}
