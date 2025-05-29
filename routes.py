@@ -202,11 +202,6 @@ def pengguna():
 
     return render_template('cms_page/user.html', users=users)
 
-
-@auth.route('/logout')
-def logout():
-    return redirect(url_for('auth.login'))
-
 @main.route('/detail-cuaca')
 def detail_cuaca():
     mode = request.args.get('mode', 'card')
@@ -242,3 +237,24 @@ def detail_cuaca():
         mode=mode,
         search_daerah=search_daerah
     )
+    
+@main.route('/rute')
+def rute():
+    return render_template('cms_page/rute.html')
+
+@main.route('/armada')
+def armada():
+    return render_template('cms_page/armada.html')
+
+@main.route('/artikel')
+def artikel():
+    return render_template('cms_page/artikel.html')
+
+@main.route('/jadwal')
+def jadwal():
+    return render_template('cms_page/jadwal.html')
+
+
+@auth.route('/logout')
+def logout():
+    return redirect(url_for('auth.login'))
