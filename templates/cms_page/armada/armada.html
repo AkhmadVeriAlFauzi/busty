@@ -1,22 +1,20 @@
-<!-- templates/cms/dashboard.html -->
 {% extends 'cms_page/cmsbase.html' %}
 
-{% block title %}Busty | Jadwal{% endblock %}
-{% block page_title %}Jadwal Keberangkatan{% endblock %}
+{% block title %}Busty | Armada{% endblock %}
+{% block page_title %}Armada{% endblock %}
 
 {% block content %}
-<!-- Sidebar -->
 <div class="flex">
     <main class="flex-1 bg-gray-50 min-h-screen py-8 px-6">
 
-        <!-- Header Section -->
+        <!-- Header -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-            <h3 class="text-2xl font-semibold text-gray-800">Daftar Jadwal Keberangkatan</h3>
+            <h3 class="text-2xl font-semibold text-gray-800">Daftar Armada</h3>
 
             <div class="flex flex-col md:flex-row gap-3 w-full md:justify-end md:items-center md:max-w-2xl">
                 <form method="get" class="flex gap-3 items-center w-full md:max-w-md">
-                    <input type="text" name="search" placeholder="Cari jadwal keberangkatan..."
-                        value="{{ request.args.get('search', '') }}"
+                    <input type="text" name="search_nama" placeholder="Cari armada bus..."
+                        value="{{ request.args.get('search_nama', '') }}"
                         class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
                     <button type="submit"
                         class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md transition duration-200">
@@ -24,55 +22,57 @@
                     </button>
                 </form>
 
-                <!-- Tombol Tambah Artikel -->
-                <a href=""
+                <a href="{{ url_for('main.tambah_armada') }}"
                     class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md transition duration-200 text-center">
-                    + Tambah Jadwal Keberangkatan
+                    + Tambah Armada Bus
                 </a>
             </div>
         </div>
 
-
-        <!-- Table Section -->
+        <!-- Table -->
         <div class="bg-white rounded-md shadow-sm overflow-hidden">
             <table class="min-w-full table-auto border-collapse">
                 <thead class="bg-blue-100 text-gray-700 text-sm uppercase">
                     <tr>
-                        <th class="px-6 py-4 text-left">1</th>
-                        <th class="px-6 py-4 text-left">2</th>
-                        <th class="px-6 py-4 text-left">3</th>
-                        <th class="px-6 py-4 text-left">4</th>
-                        <th class="px-6 py-4 text-left">5</th>
+                        <th class="px-6 py-4 text-left">ID</th>
+                        <th class="px-6 py-4 text-left">Nopol</th>
+                        <th class="px-6 py-4 text-left">Nama Bus</th>
+                        <th class="px-6 py-4 text-left">Status</th>
+                        <th class="px-6 py-4 text-left">Detail Status</th>
                         <th class="px-6 py-4 text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="text-gray-700">
-                    <!-- {% for user in users %} -->
+                    {% for item in armada_data %}
                     <tr class="border-b hover:bg-gray-50 transition">
-                        <td class="px-6 py-4 text-sm"></td>
-                        <td class="px-6 py-4 text-sm font-medium"></td>
-                        <td class="px-6 py-4 text-sm"></td>
-                        <td class="px-6 py-4 text-sm"></td>
-                        <td class="px-6 py-4 text-sm"></td>
+                        <td class="px-6 py-4 text-sm">{{ item._id }}</td>
+                        <td class="px-6 py-4 text-sm font-medium">{{ item.nopol }}</td>
+                        <td class="px-6 py-4 text-sm">{{ item.nama_bus }}</td>
+                        <td class="px-6 py-4 text-sm">{{ item.status }}</td>
+                        <td class="px-6 py-4 text-sm">{{ item.detail_status or '-' }}</td>
                         <td class="px-6 py-4 text-center">
                             <div class="flex justify-center gap-2">
-                                <a href="#"
+                                <a href="{{ url_for('main.edit_armada', armada_id=item._id) }}"
                                     class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-md text-sm transition">Edit</a>
-                                <a href="#" onclick="return confirm('Yakin ingin menghapus pengguna ini?');"
-                                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm transition">Hapus</a>
+
+                                <form method="POST" action="{{ url_for('main.hapus_armada') }}"
+                                    onsubmit="return confirm('Yakin ingin menghapus armada ini?');">
+                                    <input type="hidden" name="armada_id" value="{{ item._id }}">
+                                    <button type="submit"
+                                        class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm transition">Hapus</button>
+                                </form>
                             </div>
                         </td>
                     </tr>
-                    <!-- {% else %} -->
+                    {% else %}
                     <tr>
                         <td colspan="6" class="px-6 py-6 text-center text-gray-500 text-sm">Belum ada armada bus.</td>
                     </tr>
-                    <!-- {% endfor %} -->
+                    {% endfor %}
                 </tbody>
             </table>
         </div>
 
     </main>
 </div>
-
 {% endblock %}

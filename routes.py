@@ -181,7 +181,6 @@ def resend_otp():
     return redirect(url_for('auth.verify_otp'))
 
 
-
 @auth.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
@@ -192,15 +191,69 @@ def forgot_password():
 def dashboard():
     return render_template('cms_page/dashboard.html')
 
+# Route Pengguna
+
 @main.route('/pengguna')
-def pengguna():
+def list_pengguna():
     search_query = request.args.get('search', '').strip().lower()
     users = user_model.get_all_users()
 
     if search_query:
         users = [user for user in users if search_query in user.get('username', '').lower()]
 
-    return render_template('cms_page/user.html', users=users)
+    return render_template('cms_page/pengguna/user.html', users=users)
+
+@main.route('/hapus-pengguna', methods=['POST'])
+def hapus_pengguna():
+    user_id = request.form.get('user_id')
+
+    if user_id:
+        try:
+            deleted = user_model.delete_user_by_id(user_id)
+            if deleted:
+                flash("Pengguna berhasil dihapus.", "success")
+            else:
+                flash("Pengguna tidak ditemukan.", "error")
+        except Exception as e:
+            flash(f"Gagal menghapus pengguna: {e}", "error")
+    else:
+        flash("ID pengguna tidak valid.", "error")
+
+    return redirect(url_for('main.list_pengguna'))
+
+@main.route('/edit-pengguna/<user_id>')
+def edit_pengguna(user_id):
+    user = user_model.get_user_by_id(ObjectId(user_id))
+    if not user:
+        flash("Pengguna tidak ditemukan.", "error")
+        return redirect(url_for('main.list_pengguna'))
+    return render_template('cms_page/pengguna/edit_pengguna.html', user=user)
+
+
+@main.route('/update-pengguna', methods=['POST'])
+def update_pengguna():
+    user_id = request.form.get('user_id')
+    username = request.form.get('username')
+    email = request.form.get('email')
+
+    if not user_id or not username or not email:
+        flash("Data tidak lengkap.", "error")
+        return redirect(url_for('main.list_pengguna'))
+
+    try:
+        user_model.update_user(user_id, {
+            "username": username,
+            "email": email
+        })
+        flash("Pengguna berhasil diperbarui.", "success")
+    except Exception as e:
+        flash(f"Gagal memperbarui pengguna: {e}", "error")
+
+    return redirect(url_for('main.list_pengguna'))
+
+
+
+# Route Detail Cuaca
 
 @main.route('/detail-cuaca')
 def detail_cuaca():
@@ -238,22 +291,112 @@ def detail_cuaca():
         search_daerah=search_daerah
     )
     
+@main.route('/jadwal')
+def jadwal():
+    return render_template('cms_page/jadwal/jadwal.html')
+    
 @main.route('/rute')
 def rute():
-    return render_template('cms_page/rute.html')
+    return render_template('cms_page/rute/rute.html')
+
+# Route Armada
 
 @main.route('/armada')
-def armada():
-    return render_template('cms_page/armada.html')
+def list_armada():
+    search_nama = request.args.get('search_nama', '').lower()
+    armada_data = list(db['armada'].find())
+
+    # filter berdasarkan pencarian nama bus atau nopol
+    if search_nama:
+        armada_data = [
+            item for item in armada_data
+            if search_nama in item.get('nama_bus', '').lower() or
+               search_nama in item.get('nopol', '').lower()
+        ]
+
+    return render_template('cms_page/armada/armada.html', armada_data=armada_data)
+
+
+@main.route('/tambah-armada', methods=['GET', 'POST'])
+def tambah_armada():
+    if request.method == 'POST':
+        nopol = request.form.get('nopol')
+        nama_bus = request.form.get('nama_bus')
+        status = request.form.get('status')
+        detail_status = request.form.get('detail_status')
+
+        if not all([nopol, nama_bus, status]):
+            flash("Harap isi semua data yang diperlukan.", "error")
+            return redirect(url_for('main.tambah_armada'))
+
+        # Simpan ke MongoDB
+        db['armada'].insert_one({
+            'nopol': nopol,
+            'nama_bus': nama_bus,
+            'status': status,
+            'detail_status': detail_status,
+            'created_at': datetime.utcnow()
+        })
+
+        flash("Data armada berhasil ditambahkan.", "success")
+        return redirect(url_for('main.list_armada'))  # Ganti ke route list kalau ada
+
+    return render_template('cms_page/armada/tambah_armada.html')
+
+@main.route('/hapus-armada', methods=['POST'])
+def hapus_armada():
+    armada_id = request.form.get('armada_id')
+    if armada_id:
+        try:
+            db['armada'].delete_one({'_id': ObjectId(armada_id)})
+            flash("Armada berhasil dihapus.", "success")
+        except Exception as e:
+            flash(f"Gagal menghapus armada: {e}", "danger")
+    else:
+        flash("ID armada tidak valid.", "danger")
+    return redirect(url_for('main.list_armada'))
+
+@main.route('/cms/edit-armada/<armada_id>', methods=['GET'])
+def edit_armada(armada_id):
+    armada_data = mongo.db.armada.find_one({'_id': ObjectId(armada_id)})
+    return render_template('cms_page/armada/edit_armada.html', armada_data=armada_data)
+
+
+@main.route('/update-armada', methods=['POST'])
+def update_armada():
+    armada_id = request.form.get('armada_id')
+    nopol = request.form.get('nopol')
+    nama_bus = request.form.get('nama_bus')
+    status = request.form.get('status')
+    detail_status = request.form.get('detail_status')
+
+    if not armada_id or not nopol or not nama_bus or not status:
+        flash("Data tidak lengkap.", "danger")
+        return redirect(url_for('main.list_armada'))
+
+    try:
+        db['armada'].update_one(
+            {'_id': ObjectId(armada_id)},
+            {'$set': {
+                'nopol': nopol,
+                'nama_bus': nama_bus,
+                'status': status,
+                'detail_status': detail_status,
+                'updated_at': datetime.utcnow()
+            }}
+        )
+        flash("Data armada berhasil diperbarui.", "success")
+    except Exception as e:
+        flash(f"Gagal update armada: {e}", "danger")
+
+    return redirect(url_for('main.list_armada'))
+
+
+
 
 @main.route('/artikel')
 def artikel():
-    return render_template('cms_page/artikel.html')
-
-@main.route('/jadwal')
-def jadwal():
-    return render_template('cms_page/jadwal.html')
-
+    return render_template('cms_page/artikel/artikel.html')
 
 @auth.route('/logout')
 def logout():

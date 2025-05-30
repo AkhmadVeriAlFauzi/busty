@@ -1,8 +1,8 @@
 <!-- templates/cms/dashboard.html -->
 {% extends 'cms_page/cmsbase.html' %}
 
-{% block title %}Busty | Armada{% endblock %}
-{% block page_title %}Armada{% endblock %}
+{% block title %}Busty | Jadwal{% endblock %}
+{% block page_title %}Jadwal Keberangkatan{% endblock %}
 
 {% block content %}
 <!-- Sidebar -->
@@ -11,11 +11,11 @@
 
         <!-- Header Section -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-            <h3 class="text-2xl font-semibold text-gray-800">Daftar Artikel</h3>
+            <h3 class="text-2xl font-semibold text-gray-800">Daftar Jadwal Keberangkatan</h3>
 
             <div class="flex flex-col md:flex-row gap-3 w-full md:justify-end md:items-center md:max-w-2xl">
                 <form method="get" class="flex gap-3 items-center w-full md:max-w-md">
-                    <input type="text" name="search" placeholder="Cari armada bus..."
+                    <input type="text" name="search" placeholder="Cari jadwal keberangkatan..."
                         value="{{ request.args.get('search', '') }}"
                         class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" />
                     <button type="submit"
@@ -27,7 +27,7 @@
                 <!-- Tombol Tambah Artikel -->
                 <a href=""
                     class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md transition duration-200 text-center">
-                    + Tambah Armada Bus
+                    + Tambah Jadwal
                 </a>
             </div>
         </div>
@@ -38,11 +38,11 @@
             <table class="min-w-full table-auto border-collapse">
                 <thead class="bg-blue-100 text-gray-700 text-sm uppercase">
                     <tr>
-                        <th class="px-6 py-4 text-left">ID</th>
-                        <th class="px-6 py-4 text-left">Nopol</th>
-                        <th class="px-6 py-4 text-left">Nama Bus</th>
-                        <th class="px-6 py-4 text-left">Status</th>
-                        <th class="px-6 py-4 text-left">Detail Status</th>
+                        <th class="px-6 py-4 text-left">1</th>
+                        <th class="px-6 py-4 text-left">2</th>
+                        <th class="px-6 py-4 text-left">3</th>
+                        <th class="px-6 py-4 text-left">4</th>
+                        <th class="px-6 py-4 text-left">5</th>
                         <th class="px-6 py-4 text-center">Aksi</th>
                     </tr>
                 </thead>

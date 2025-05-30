@@ -7,7 +7,7 @@
 <div class="flex">
   <main class="flex-1 bg-gray-50 min-h-screen py-8 px-6">
 
-    <!-- Header Section -->
+    <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
       <h3 class="text-2xl font-semibold text-gray-800">Daftar Pengguna</h3>
       <form method="get" class="flex gap-3 items-center w-full md:max-w-md">
@@ -21,7 +21,7 @@
       </form>
     </div>
 
-    <!-- Table Section -->
+    <!-- Tabel -->
     <div class="bg-white rounded-md shadow-sm overflow-hidden">
       <table class="min-w-full table-auto border-collapse">
         <thead class="bg-blue-100 text-gray-700 text-sm uppercase">
@@ -40,21 +40,57 @@
             <td class="px-6 py-4 text-sm">{{ user.email }}</td>
             <td class="px-6 py-4 text-center">
               <div class="flex justify-center gap-2">
-                <a href="#" class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-md text-sm transition">Edit</a>
-                <a href="#" onclick="return confirm('Yakin ingin menghapus pengguna ini?');"
-                  class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm transition">Hapus</a>
+                <a href="{{ url_for('main.edit_pengguna', user_id=user._id) }}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-md text-sm transition">Edit</a>
+                <button onclick="openModal('{{ user._id }}')" 
+                        class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm transition">
+                  Hapus
+                </button>
               </div>
             </td>
           </tr>
-          {% else %}
+
+          <!-- Modal Konfirmasi Hapus -->
+          <div id="modal-{{ user._id }}" class="fixed inset-0 z-50 hidden bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white rounded-lg p-6 w-full max-w-sm shadow-lg text-center">
+              <h2 class="text-xl font-semibold text-gray-800 mb-4">Konfirmasi Hapus</h2>
+              <p class="text-gray-600 mb-6">Yakin ingin menghapus pengguna <strong>{{ user.username }}</strong>?</p>
+              <div class="flex justify-center gap-4">
+                <button onclick="closeModal('{{ user._id }}')" 
+                        class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition">
+                  Batal
+                </button>
+                <form method="POST" action="{{ url_for('main.hapus_pengguna') }}">
+                  <input type="hidden" name="user_id" value="{{ user._id }}">
+                  <button type="submit" 
+                          class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition">
+                    Hapus
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+
+          {% if users|length == 0 %}
           <tr>
             <td colspan="4" class="px-6 py-6 text-center text-gray-500 text-sm">Belum ada pengguna.</td>
           </tr>
-          {% endfor %}
+          {% endif %}
         </tbody>
       </table>
     </div>
 
   </main>
 </div>
+
+<!-- Script Modal -->
+<script>
+  function openModal(id) {
+    document.getElementById('modal-' + id).classList.remove('hidden');
+  }
+
+  function closeModal(id) {
+    document.getElementById('modal-' + id).classList.add('hidden');
+  }
+</script>
 {% endblock %}

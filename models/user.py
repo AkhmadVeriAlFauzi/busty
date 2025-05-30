@@ -53,3 +53,4 @@ class User:
             {'$set': {'is_verified': True}, '$unset': {'otp': '', 'otp_expired': ''}}
         )
         return True, "Verifikasi berhasil"
+

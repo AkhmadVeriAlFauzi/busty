@@ -55,12 +55,27 @@
         class="bg-white border border-gray-200 rounded-md shadow-sm hover:shadow-md p-5 transition duration-300 space-y-2">
         <div class="flex justify-between items-center">
           <div>
-            <h3 class="text-lg font-semibold text-gray-800">{{ item.kab_kota }}</h3>
-            <p class="text-sm text-gray-500">{{ item.kecamatan }} - {{ item.kelurahan }}</p>
+            <h3 class="text-lg font-semibold text-gray-800">{{ item.kelurahan }}</h3>
+            <p class="text-sm text-gray-500">{{ item.kecamatan }} - {{ item.kab_kota }}</p>
           </div>
           <div class="text-3xl">
-            {% if item.suhu >= 32 %}☀️{% elif item.suhu >= 24 %}⛅{% else %}🌧️{% endif %}
+            {% if item.cuaca == "Cerah" %}
+            ☀️
+            {% elif item.cuaca == "Berawan" %}
+            ⛅
+            {% elif item.cuaca == "Berawan Tebal" %}
+            ☁️
+            {% elif item.cuaca == "Hujan Ringan" %}
+            🌦️
+            {% elif item.cuaca == "Hujan Sedang" %}
+            🌧️
+            {% elif item.cuaca == "Hujan Deras" %}
+            ⛈️
+            {% else %}
+            ❓
+            {% endif %}
           </div>
+
         </div>
 
         <div class="flex justify-between text-sm text-gray-700 font-medium">
@@ -109,49 +124,49 @@
   <script>
     {% for provinsi, kab_group in provinsi_grouped.items() %}
     {% for kab_kota, data in kab_group.items() %}
-    const ctx_{{ provinsi | replace(' ', '') }}_{{ loop.index }} = document.getElementById('chart-{{ provinsi | replace(' ', '') }}-{{ loop.index }}').getContext('2d');
+    const ctx_{{ provinsi | replace(' ', '') }}_{ { loop.index } } = document.getElementById('chart-{{ provinsi | replace(' ', '') }}-{{ loop.index }}').getContext('2d');
     new Chart(ctx_{{ provinsi | replace(' ', '') }}_{{ loop.index }}, {
       type: 'bar',
       data: {
-        labels: {{ data | map(attribute='kecamatan') | list | tojson }},
-        datasets: [{
-          label: 'Suhu (°C)',
-          data: {{ data | map(attribute='suhu') | list | tojson }},
-          backgroundColor: 'rgba(59, 130, 246, 0.6)',
-          borderColor: 'rgba(59, 130, 246, 1)',
-          borderWidth: 1,
-          borderRadius: 8
+        labels: {{ data | map(attribute = 'kecamatan') | list | tojson }},
+      datasets: [{
+        label: 'Suhu (°C)',
+        data: {{ data | map(attribute = 'suhu') | list | tojson }},
+      backgroundColor: 'rgba(59, 130, 246, 0.6)',
+      borderColor: 'rgba(59, 130, 246, 1)',
+      borderWidth: 1,
+      borderRadius: 8
         }]
       },
       options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => ctx.raw + '°C'
-            }
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ctx.raw + '°C'
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          suggestedMax: 50,
+          title: {
+            display: true,
+            text: 'Suhu (°C)',
+            font: { size: 14 }
           }
         },
-        scales: {
-          y: {
-            beginAtZero: true,
-            suggestedMax: 50,
-            title: {
-              display: true,
-              text: 'Suhu (°C)',
-              font: { size: 14 }
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Kecamatan',
-              font: { size: 14 }
-            }
+        x: {
+          title: {
+            display: true,
+            text: 'Kecamatan',
+            font: { size: 14 }
           }
         }
       }
+    }
     });
     {% endfor %}
     {% endfor %}
