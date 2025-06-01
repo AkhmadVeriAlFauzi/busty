@@ -20,6 +20,18 @@ class User:
             # 'is_verified': False  # default belum verifikasi
         }
         return self.collection.insert_one(user_data)
+    
+    def update_user(self, user_id, update_data):
+        return self.collection.update_one(
+            {'_id': ObjectId(user_id)},
+            {'$set': update_data}
+    )
+        
+    def delete_user_by_id(self, user_id):
+        result = self.collection.delete_one({'_id': ObjectId(user_id)})
+        return result.deleted_count > 0
+
+
 
     def find_by_email(self, email):
         return self.collection.find_one({'email': email})

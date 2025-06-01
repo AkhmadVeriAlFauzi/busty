@@ -52,17 +52,19 @@
                         <td class="px-6 py-4 text-sm">{{ item.detail_status or '-' }}</td>
                         <td class="px-6 py-4 text-center">
                             <div class="flex justify-center gap-2">
-                                <a href="{{ url_for('main.edit_armada', armada_id=item._id) }}"
-                                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-md text-sm transition">Edit</a>
+                                <button onclick="confirmEdit('{{ url_for('main.edit_armada', armada_id=item._id) }}')"
+                                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-md text-sm transition">
+                                    Edit
+                                </button>
 
-                                <form method="POST" action="{{ url_for('main.hapus_armada') }}"
-                                    onsubmit="return confirm('Yakin ingin menghapus armada ini?');">
-                                    <input type="hidden" name="armada_id" value="{{ item._id }}">
-                                    <button type="submit"
-                                        class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm transition">Hapus</button>
-                                </form>
+                                <button onclick="confirmDelete('{{ item._id }}', '{{ item.nama_bus }}')"
+                                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm transition">
+                                    Hapus
+                                </button>
+
                             </div>
                         </td>
+
                     </tr>
                     {% else %}
                     <tr>
@@ -75,4 +77,53 @@
 
     </main>
 </div>
+
+<script>
+    function confirmEdit(url) {
+    Swal.fire({
+      title: 'Edit Data?',
+      text: 'Kamu akan diarahkan ke halaman edit.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Lanjut Edit',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: '#38a169', // hijau
+      cancelButtonColor: '#6c757d'  // abu-abu
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = url;
+      }
+    });
+  }
+
+    function confirmDelete(id, nama_bus) {
+    Swal.fire({
+      title: `Yakin hapus armada "${nama_bus}"?`,
+      text: "Data yang dihapus tidak bisa dikembalikan!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e3342f',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Hapus',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Kirim form delete pakai fetch POST
+        fetch("{{ url_for('main.hapus_armada') }}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": "{{ csrf_token() if csrf_token else '' }}"
+          },
+          body: `armada_id=${id}`
+        }).then(res => {
+          if (res.redirected) {
+            window.location.href = res.url;
+          }
+        });
+      }
+    });
+  }
+</script>
+
 {% endblock %}

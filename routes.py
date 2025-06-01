@@ -223,7 +223,7 @@ def hapus_pengguna():
 
 @main.route('/edit-pengguna/<user_id>')
 def edit_pengguna(user_id):
-    user = user_model.get_user_by_id(ObjectId(user_id))
+    user = user_model.find_by_id(ObjectId(user_id))
     if not user:
         flash("Pengguna tidak ditemukan.", "error")
         return redirect(url_for('main.list_pengguna'))
@@ -348,17 +348,30 @@ def hapus_armada():
     armada_id = request.form.get('armada_id')
     if armada_id:
         try:
-            db['armada'].delete_one({'_id': ObjectId(armada_id)})
-            flash("Armada berhasil dihapus.", "success")
+            result = mongo.db.armada.delete_one({'_id': ObjectId(armada_id)})
+            if result.deleted_count > 0:
+                flash("Armada berhasil dihapus.", "success")
+            else:
+                flash("Armada tidak ditemukan.", "error")
         except Exception as e:
-            flash(f"Gagal menghapus armada: {e}", "danger")
+            flash(f"Gagal menghapus armada: {e}", "error")
     else:
-        flash("ID armada tidak valid.", "danger")
+        flash("ID armada tidak valid.", "error")
     return redirect(url_for('main.list_armada'))
+
 
 @main.route('/cms/edit-armada/<armada_id>', methods=['GET'])
 def edit_armada(armada_id):
-    armada_data = mongo.db.armada.find_one({'_id': ObjectId(armada_id)})
+    try:
+        armada_data = mongo.db.armada.find_one({'_id': ObjectId(armada_id)})
+    except Exception as e:
+        flash(f"ID armada tidak valid: {e}", "error")
+        return redirect(url_for('main.list_armada'))
+
+    if not armada_data:
+        flash("Armada tidak ditemukan.", "error")
+        return redirect(url_for('main.list_armada'))
+
     return render_template('cms_page/armada/edit_armada.html', armada_data=armada_data)
 
 
@@ -371,11 +384,11 @@ def update_armada():
     detail_status = request.form.get('detail_status')
 
     if not armada_id or not nopol or not nama_bus or not status:
-        flash("Data tidak lengkap.", "danger")
+        flash("Data tidak lengkap.", "error")
         return redirect(url_for('main.list_armada'))
 
     try:
-        db['armada'].update_one(
+        result = mongo.db.armada.update_one(
             {'_id': ObjectId(armada_id)},
             {'$set': {
                 'nopol': nopol,
@@ -385,12 +398,14 @@ def update_armada():
                 'updated_at': datetime.utcnow()
             }}
         )
-        flash("Data armada berhasil diperbarui.", "success")
+        if result.modified_count > 0:
+            flash("Data armada berhasil diperbarui.", "success")
+        else:
+            flash("Tidak ada perubahan pada data armada.", "info")
     except Exception as e:
-        flash(f"Gagal update armada: {e}", "danger")
+        flash(f"Gagal update armada: {e}", "error")
 
     return redirect(url_for('main.list_armada'))
-
 
 
 

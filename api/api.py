@@ -50,6 +50,37 @@ def require_auth(f):
 @api.route('/protected', methods=['GET'])
 @require_auth
 def protected_route(current_user):
+    
+    """
+    Endpoint Terproteksi (Memerlukan API Key dan Token JWT)
+    ---
+    tags:
+      - Auth
+    security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+    responses:
+      200:
+        description: Akses berhasil, data user dikembalikan
+        schema:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Berhasil mengakses endpoint terlindungi!
+            user:
+              type: object
+              properties:
+                id:
+                  type: string
+                username:
+                  type: string
+                email:
+                  type: string
+      401:
+        description: Token atau API Key tidak valid
+    """
+    
     return jsonify({
         'message': 'Berhasil mengakses endpoint terlindungi!',
         'user': {
@@ -64,6 +95,45 @@ def protected_route(current_user):
 
 @api.route('/register', methods=['POST'])
 def api_register():
+    
+    """
+    Registrasi pengguna baru dan kirim OTP ke email
+    ---
+    tags:
+      - Auth
+    parameters:
+      - in: body
+        name: user
+        required: true
+        schema:
+          id: RegisterUser
+          required:
+            - username
+            - email
+            - no_hp
+            - password
+          properties:
+            username:
+              type: string
+              example: johndoe
+            email:
+              type: string
+              example: johndoe@example.com
+            no_hp:
+              type: string
+              example: "08123456789"
+            password:
+              type: string
+              example: secret123
+    responses:
+      200:
+        description: OTP berhasil dikirim
+      400:
+        description: Data tidak lengkap
+      409:
+        description: Username atau email sudah digunakan
+    """    
+    
     data = request.get_json()
     username = data.get('username')
     email = data.get('email')
@@ -93,6 +163,31 @@ def api_register():
 
 @api.route('/verify-otp', methods=['POST'])
 def api_verify_otp():
+    
+    """
+    Verifikasi OTP yang dikirim ke email pengguna
+    ---
+    tags:
+      - Auth
+    parameters:
+      - in: body
+        name: otp
+        required: true
+        schema:
+          type: object
+          required:
+            - otp
+          properties:
+            otp:
+              type: string
+              example: "123456"
+    responses:
+      201:
+        description: Registrasi berhasil
+      400:
+        description: OTP tidak valid atau session expired
+    """
+    
     data = request.get_json()
     input_otp = data.get('otp')
 
@@ -123,6 +218,42 @@ def api_verify_otp():
 
 @api.route('/login', methods=['POST'])
 def api_login():
+    
+    """
+    Login user dan dapatkan token JWT
+    ---
+    tags:
+      - Auth
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          id: LoginUser
+          required:
+            - email
+            - password
+          properties:
+            email:
+              type: string
+              example: niko@example.com
+            password:
+              type: string
+              example: secret123
+    responses:
+      200:
+        description: Login berhasil, kembalikan token JWT
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+            token:
+              type: string
+      401:
+        description: Email atau password salah     
+    """
+    
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
@@ -143,6 +274,43 @@ def api_login():
 @api.route('/data-cuaca', methods=['GET'])
 @require_auth
 def get_data_cuaca():
+    
+    """
+    Ambil data prakiraan cuaca (auth required)
+    ---
+    tags:
+      - Cuaca
+    parameters:
+      - name: search_daerah
+        in: query
+        type: string
+        required: false
+        description: Nama kab/kota, kecamatan, atau kelurahan untuk filter pencarian
+    security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+    responses:
+      200:
+        description: Daftar data cuaca
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              _id:
+                type: string
+              kab_kota:
+                type: string
+              kecamatan:
+                type: string
+              kelurahan:
+                type: string
+              suhu:
+                type: integer
+      401:
+        description: Token atau API Key tidak valid
+    """
+    
     search = request.args.get('search_daerah', '').lower()
     cuaca_data = list(dbcuaca['prakiraan_cuaca'].find())
 

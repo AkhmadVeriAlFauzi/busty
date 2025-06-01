@@ -1,4 +1,5 @@
 from flask import Flask
+from flasgger import Swagger
 from flask_cors import CORS  # ✅ Import CORS
 from routes import main, auth
 from extensions import mongo, mail
@@ -8,10 +9,42 @@ import os
 import redis
 import uuid
 
+
 # ⏬ Load isi .env
 load_dotenv()
 
 app = Flask(__name__)
+
+swagger_config = {
+    "headers": [],
+    "specs": [
+        {
+            "endpoint": 'apispec_1',
+            "route": '/apispec_1.json',
+            "rule_filter": lambda rule: True,
+            "model_filter": lambda tag: True,
+        }
+    ],
+    "static_url_path": "/flasgger_static",
+    "swagger_ui": True,
+    "specs_route": "/apidocs",
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "x-api-key",
+            "in": "header"
+        },
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": "Format: Bearer {token}"
+        }
+    },
+}
+
+swagger = Swagger(app, config=swagger_config)
+
 app.secret_key = os.getenv('SECRET_KEY')
 
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
