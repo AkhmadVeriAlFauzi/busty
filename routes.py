@@ -348,7 +348,7 @@ def hapus_armada():
     armada_id = request.form.get('armada_id')
     if armada_id:
         try:
-            result = mongo.db.armada.delete_one({'_id': ObjectId(armada_id)})
+            result = db['armada'].delete_one({'_id': ObjectId(armada_id)})
             if result.deleted_count > 0:
                 flash("Armada berhasil dihapus.", "success")
             else:
@@ -363,7 +363,7 @@ def hapus_armada():
 @main.route('/cms/edit-armada/<armada_id>', methods=['GET'])
 def edit_armada(armada_id):
     try:
-        armada_data = mongo.db.armada.find_one({'_id': ObjectId(armada_id)})
+        armada_data = db['armada'].find_one({'_id': ObjectId(armada_id)})
     except Exception as e:
         flash(f"ID armada tidak valid: {e}", "error")
         return redirect(url_for('main.list_armada'))
@@ -388,7 +388,7 @@ def update_armada():
         return redirect(url_for('main.list_armada'))
 
     try:
-        result = mongo.db.armada.update_one(
+        result = db['armada'].update_one(
             {'_id': ObjectId(armada_id)},
             {'$set': {
                 'nopol': nopol,
