@@ -7,7 +7,7 @@ from werkzeug.security import check_password_hash
 import jwt
 from functools import wraps
 from bson import ObjectId
-import datetime
+from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 
@@ -95,44 +95,22 @@ def protected_route(current_user):
 
 @api.route('/register', methods=['POST'])
 def api_register():
-    
     """
-    Registrasi pengguna baru dan kirim OTP ke email
-    ---
-    tags:
-      - Auth
-    parameters:
-      - in: body
-        name: user
-        required: true
-        schema:
-          id: RegisterUser
-          required:
-            - username
-            - email
-            - no_hp
-            - password
-          properties:
-            username:
-              type: string
-              example: johndoe
-            email:
-              type: string
-              example: johndoe@example.com
-            no_hp:
-              type: string
-              example: "08123456789"
-            password:
-              type: string
-              example: secret123
-    responses:
-      200:
-        description: OTP berhasil dikirim
-      400:
-        description: Data tidak lengkap
-      409:
-        description: Username atau email sudah digunakan
-    """    
+    Register a new user and send OTP to their email.
+
+    Expected JSON body:
+    {
+        "username": "string",
+        "email": "string",
+        "no_hp": "string",
+        "password": "string"
+    }
+
+    Returns:
+        200 OK: OTP has been sent to the user's email.
+        400 Bad Request: Missing required fields.
+        409 Conflict: Email or username already exists.
+    """
     
     data = request.get_json()
     username = data.get('username')
@@ -142,78 +120,127 @@ def api_register():
 
     if not all([username, email, no_hp, password]):
         return jsonify({'status': 'error', 'message': 'Semua field wajib diisi.'}), 400
+
     if user_model.find_by_email(email):
         return jsonify({'status': 'error', 'message': 'Email sudah terdaftar.'}), 409
+
     if user_model.find_by_username(username):
         return jsonify({'status': 'error', 'message': 'Username sudah terdaftar.'}), 409
 
-    # Generate OTP dan simpan sementara
+    hashed_password = generate_password_hash(password)
     otp = generate_otp()
-    session['otp'] = otp
-    session['user_temp'] = {
+
+    user_data = {
         'username': username,
         'email': email,
         'no_hp': no_hp,
-        'password': generate_password_hash(password)
+        'password': hashed_password,
+        'created_at': datetime.utcnow(),
+        'is_verified': False,
+        'otp': otp,
+        'otp_expired': datetime.utcnow() + timedelta(minutes=1)
     }
 
-    send_otp_email(email, otp)
+    db.user.insert_one(user_data)
+
+    session['otp'] = otp
+    session['email'] = email
+
+    send_otp_email(email, otp, expiry_minutes=5)
 
     return jsonify({'status': 'pending', 'message': 'OTP telah dikirim ke email kamu.'}), 200
 
+
 @api.route('/verify-otp', methods=['POST'])
 def api_verify_otp():
-    
+  
     """
-    Verifikasi OTP yang dikirim ke email pengguna
-    ---
-    tags:
-      - Auth
-    parameters:
-      - in: body
-        name: otp
-        required: true
-        schema:
-          type: object
-          required:
-            - otp
-          properties:
-            otp:
-              type: string
-              example: "123456"
-    responses:
-      201:
-        description: Registrasi berhasil
-      400:
-        description: OTP tidak valid atau session expired
+    Verify user's account using the OTP sent to their email.
+
+    Expected JSON body:
+    {
+        "otp": "string"
+    }
+
+    Session data must include:
+        - email: the registered email address
+
+    Returns:
+        200 OK: Account successfully verified.
+        400 Bad Request: Missing OTP/email, wrong OTP, or expired OTP.
+        404 Not Found: User not found.
     """
     
     data = request.get_json()
     input_otp = data.get('otp')
+    email = session.get('email')
 
-    if not input_otp:
-        return jsonify({'status': 'error', 'message': 'OTP harus diisi.'}), 400
+    if not input_otp or not email:
+        return jsonify({'status': 'error', 'message': 'OTP dan email wajib.'}), 400
 
-    otp = session.get('otp')
-    user_temp = session.get('user_temp')
+    user = db.user.find_one({'email': email})
 
-    if not user_temp:
-        return jsonify({'status': 'error', 'message': 'Session expired. Daftar ulang.'}), 400
+    if not user:
+        return jsonify({'status': 'error', 'message': 'User tidak ditemukan.'}), 404
 
-    if input_otp == otp:
-        user_model.create_user(
-            user_temp['username'],
-            user_temp['email'],
-            user_temp['no_hp'],
-            user_temp['password']
-        )
-        session.pop('otp', None)
-        session.pop('user_temp', None)
-        return jsonify({'status': 'success', 'message': 'Registrasi berhasil.'}), 201
-    else:
+    if user['is_verified']:
+        return jsonify({'status': 'error', 'message': 'Akun sudah terverifikasi.'}), 400
+
+    if input_otp != user.get('otp'):
         return jsonify({'status': 'error', 'message': 'OTP salah.'}), 400
 
+    if datetime.utcnow() > user.get('otp_expired', datetime.utcnow()):
+        return jsonify({'status': 'error', 'message': 'OTP sudah kedaluwarsa.'}), 400
 
+    db.user.update_one({'email': email}, {
+        '$set': {'is_verified': True},
+        '$unset': {'otp': "", 'otp_expired': ""}
+    })
+
+    session.pop('otp', None)
+    session.pop('email', None)
+
+    return jsonify({'status': 'success', 'message': 'Akun berhasil diverifikasi.'}), 200
+
+
+@api.route('/resend-otp', methods=['POST'])
+def resend_otp():
+
+    """
+    Resend a new OTP to the user's email if not yet verified.
+
+    Expected JSON body:
+    {
+        "email": "string"
+    }
+
+    Returns:
+        200 OK: New OTP sent successfully.
+        400 Bad Request: Email is missing or account is already verified.
+        404 Not Found: User with the provided email does not exist.
+    """
+    
+    data = request.get_json()
+    email = data.get('email')
+    if not email:
+        return jsonify({'status': 'error', 'message': 'Email wajib diisi.'}), 400
+
+    user = db.user.find_one({'email': email})
+    if not user:
+        return jsonify({'status': 'error', 'message': 'User tidak ditemukan.'}), 404
+
+    if user['is_verified']:
+        return jsonify({'status': 'error', 'message': 'Akun sudah terverifikasi.'}), 400
+
+    new_otp = generate_otp()
+    db.user.update_one({'email': email}, {
+        '$set': {
+            'otp': new_otp,
+            'otp_expired': datetime.utcnow() + timedelta(minutes=5)
+        }
+    })
+    send_otp_email(email, new_otp, expiry_minutes=5)
+    return jsonify({'status': 'success', 'message': 'OTP baru telah dikirim.'}), 200
 
 
 @api.route('/login', methods=['POST'])

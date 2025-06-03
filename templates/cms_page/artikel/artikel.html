@@ -7,7 +7,7 @@
 {% block content %}
 <!-- Sidebar -->
 <div class="flex">
-  <main class="flex-1 bg-gray-50 min-h-screen py-8 px-6">
+  <main class="flex-1 bg-gray-50 py-8 px-6">
 
     <!-- Header Section -->
 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
@@ -25,7 +25,7 @@
     </form>
     
     <!-- Tombol Tambah Artikel -->
-    <a href=""
+    <a href="{{ url_for('main.tambah_artikel') }}"
       class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md transition duration-200 text-center">
       + Tambah Artikel
     </a>
@@ -47,13 +47,16 @@
           </tr>
         </thead>
         <tbody class="text-gray-700">
-          <!-- {% for user in users %} -->
+          {% for item in artikel_data %}
           <tr class="border-b hover:bg-gray-50 transition">
-            <td class="px-6 py-4 text-sm"></td>
-            <td class="px-6 py-4 text-sm font-medium"></td>
-            <td class="px-6 py-4 text-sm"></td>
-            <td class="px-6 py-4 text-sm"></td>
-            <td class="px-6 py-4 text-sm"></td>
+            <td class="px-6 py-4 text-sm">{{ item._id }}</td>
+            <td class="px-6 py-4 text-sm">
+              <img src="{{ url_for('static', filename='image/' ~ item.image) }}" alt="img"
+                class="w-16 h-16 object-cover rounded-md" />
+            </td>
+            <td class="px-6 py-4 text-sm">{{ item.judul }}</td>
+            <td class="px-6 py-4 text-sm">{{ item.sub_judul }}</td>
+            <td class="px-6 py-4 text-sm">{{ item.konten[:50] }}{% if item.konten|length > 50 %}...{% endif %}</td>
             <td class="px-6 py-4 text-center">
               <div class="flex justify-center gap-2">
                 <a href="#" class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-md text-sm transition">Edit</a>
@@ -62,11 +65,11 @@
               </div>
             </td>
           </tr>
-          <!-- {% else %} -->
+          {% else %}
           <tr>
             <td colspan="6" class="px-6 py-6 text-center text-gray-500 text-sm">Belum ada artikel.</td>
           </tr>
-          <!-- {% endfor %} -->
+          {% endfor %}
         </tbody>
       </table>
     </div>

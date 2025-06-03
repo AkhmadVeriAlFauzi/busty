@@ -3,6 +3,7 @@ from bson import ObjectId
 from models.user import User
 from pymongo import MongoClient
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 from flask_mail import Message
 from extensions import mail, mongo
 from models.user import User
@@ -96,6 +97,8 @@ def login():
         
     return render_template('auth/login.html')
 
+# routes.py
+
 @auth.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -104,24 +107,32 @@ def register():
         no_hp = request.form['no_hp']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
-        
+
         if password != confirm_password:
             flash('Password dan konfirmasi tidak sama.', 'danger')
             return redirect(url_for('auth.register'))
 
-        # Simpan data ke session sementara
+        existing_user = user_model.find_by_email(email)
+        if existing_user:
+            flash('Email sudah terdaftar.', 'danger')
+            return redirect(url_for('auth.register'))
+
         otp = generate_otp()
-        session['otp'] = otp
-        session['otp_expired_at'] = (datetime.utcnow() + timedelta(minutes=1)).isoformat()  # ⏳ expired 5 menit
-        session['user_temp'] = {
-            'username': username,
-            'email': email,
-            'no_hp': no_hp,
-            'password': generate_password_hash(password),
-        }
+        expired_time = datetime.utcnow() + timedelta(minutes=1)
 
-        send_otp_email(email, otp, 1)  # kirim email + info expired
+        # Simpan langsung ke DB (belum verified)
+        user_model.create_user(
+            username,
+            email,
+            no_hp,
+            generate_password_hash(password),
+            otp,
+            expired_time
+        )
 
+        session['email_temp'] = email  # buat tracking verifikasi nanti
+
+        send_otp_email(email, otp, 1)
 
         flash('Kode OTP telah dikirim ke email kamu.', 'info')
         return redirect(url_for('auth.verify_otp'))
@@ -129,56 +140,44 @@ def register():
     return render_template('auth/register.html')
 
 
+
 @auth.route('/verify-otp', methods=['GET', 'POST'])
 def verify_otp():
     if request.method == 'POST':
         input_otp = request.form['otp']
-        otp = session.get('otp')
-        otp_expired_at = session.get('otp_expired_at')
-        user_temp = session.get('user_temp')
+        email = session.get('email_temp')
 
-        if not user_temp or not otp_expired_at:
+        if not email:
             flash('Session expired. Silakan register ulang.', 'danger')
             return redirect(url_for('auth.register'))
 
-        # Cek apakah OTP sudah expired
-        expired_time = datetime.fromisoformat(otp_expired_at)
-        if datetime.utcnow() > expired_time:
-            flash('Kode OTP telah kedaluwarsa. Silakan klik "Kirim ulang OTP".', 'danger')
-            return redirect(url_for('auth.verify_otp'))
-
-        if input_otp == otp:
-            user_model.create_user(
-                user_temp['username'],
-                user_temp['email'],
-                user_temp['no_hp'],
-                user_temp['password']
-            )
-            session.pop('otp', None)
-            session.pop('otp_expired_at', None)
-            session.pop('user_temp', None)
-
-            flash('Registrasi berhasil. Silakan login.', 'success')
+        success, message = user_model.verify_otp(email, input_otp)
+        if success:
+            session.pop('email_temp', None)
+            flash('Verifikasi berhasil. Silakan login.', 'success')
             return redirect(url_for('auth.login'))
         else:
-            flash('OTP salah. Silakan coba lagi.', 'danger')
+            flash(message, 'danger')
 
     return render_template('auth/verify_otp.html')
 
+
 @auth.route('/resend-otp', methods=['POST'])
 def resend_otp():
-    user_temp = session.get('user_temp')
-    if not user_temp:
+    email = session.get('email_temp')
+    if not email:
         flash('Session expired. Silakan register ulang.', 'danger')
         return redirect(url_for('auth.register'))
 
     otp = generate_otp()
-    session['otp'] = otp
-    session['otp_expired_at'] = (datetime.utcnow() + timedelta(minutes=5)).isoformat()
-    send_otp_email(user_temp['email'], otp)
+    expired_time = datetime.utcnow() + timedelta(minutes=1)
+    user_model.set_otp(email, otp, expired_time)
+
+    send_otp_email(email, otp)
 
     flash('Kode OTP baru telah dikirim ke email kamu. Berlaku selama 1 menit.', 'info')
     return redirect(url_for('auth.verify_otp'))
+
 
 
 @auth.route('/forgot-password', methods=['GET', 'POST'])
@@ -294,10 +293,53 @@ def detail_cuaca():
 @main.route('/jadwal')
 def jadwal():
     return render_template('cms_page/jadwal/jadwal.html')
+
+# Rute
     
 @main.route('/rute')
-def rute():
-    return render_template('cms_page/rute/rute.html')
+def list_rute():
+    search_nama = request.args.get('search_nama', '').lower()
+    rute_data = list(db['rute_operasional'].find())
+
+    # filter berdasarkan pencarian nama bus atau nopol
+    if search_nama:
+        rute_data = [
+            item for item in rute_data
+            if search_nama in item.get('tanggal', '').lower() or
+               search_nama in item.get('terminal_tujuan', '').lower()
+        ]
+
+    return render_template('cms_page/rute/rute.html', rute_data=rute_data)
+
+
+@main.route('/tambah-rute', methods=['GET', 'POST'])
+def tambah_rute():
+    if request.method == 'POST':
+        terminal_awal = request.form.get('terminal_awal')
+        terminal_tujuan = request.form.get('terminal_tujuan')
+        tanggal = request.form.get('tanggal')
+        jumlah_penumpang = request.form.get('jumlah_penumpang')
+
+        if not all([terminal_awal, terminal_tujuan, tanggal, jumlah_penumpang]):
+            flash("Harap isi semua data yang diperlukan.", "error")
+            return redirect(url_for('main.tambah_rute'))
+
+        # Simpan ke MongoDB
+        db['rute_operasional'].insert_one({
+            'terminal_awal': terminal_awal,
+            'terminal_tujuan': terminal_tujuan,
+            'tanggal': tanggal,
+	        'jumlah_penumpang': jumlah_penumpang,
+            'created_at': datetime.utcnow()
+        })
+
+        flash("Data armada berhasil ditambahkan.", "success")
+        return redirect(url_for('main.list_rute'))  # Ganti ke route list kalau ada
+
+    return render_template('cms_page/rute/tambah_rute.html')
+
+
+
 
 # Route Armada
 
@@ -410,8 +452,51 @@ def update_armada():
 
 
 @main.route('/artikel')
-def artikel():
-    return render_template('cms_page/artikel/artikel.html')
+def list_artikel():
+    search_judul = request.args.get('search_judul', '').lower()
+    artikel_data = list(db['artikel'].find())
+
+    # filter berdasarkan pencarian nama bus atau nopol
+    if search_judul:
+        artikel_data = [
+            item for item in artikel_data
+            if search_judul in item.get('judul', '').lower() or
+               search_judul in item.get('created_at', '').lower()
+        ]
+
+    return render_template('cms_page/artikel/artikel.html', artikel_data=artikel_data)
+
+
+@main.route('/tambah-artikel', methods=['GET', 'POST'])
+def tambah_artikel():
+    if request.method == 'POST':
+        image_file = request.files.get('image')  # ambil file gambar
+        judul = request.form.get('judul')
+        sub_judul = request.form.get('sub_judul')
+        konten = request.form.get('konten')
+
+        if not all([image_file, judul, sub_judul, konten]):
+            flash("Harap isi semua data yang diperlukan.", "error")
+            return redirect(url_for('main.tambah_artikel'))
+
+        # Simpan file gambar ke folder static/image
+        filename = secure_filename(image_file.filename)
+        filepath = os.path.join('static/image', filename)
+        image_file.save(filepath)
+
+        # Simpan nama file-nya aja ke database
+        db['artikel'].insert_one({
+            'image': filename,
+            'judul': judul,
+            'sub_judul': sub_judul,
+            'konten': konten,
+            'created_at': datetime.utcnow()
+        })
+
+        flash("Data artikel berhasil ditambahkan.", "success")
+        return redirect(url_for('main.list_artikel'))
+
+    return render_template('cms_page/artikel/tambah_artikel.html')
 
 @auth.route('/logout')
 def logout():
