@@ -95,21 +95,70 @@ def protected_route(current_user):
 
 @api.route('/register', methods=['POST'])
 def api_register():
+  
     """
-    Register a new user and send OTP to their email.
-
-    Expected JSON body:
-    {
-        "username": "string",
-        "email": "string",
-        "no_hp": "string",
-        "password": "string"
-    }
-
-    Returns:
-        200 OK: OTP has been sent to the user's email.
-        400 Bad Request: Missing required fields.
-        409 Conflict: Email or username already exists.
+    Registrasi pengguna baru dan kirim OTP ke email mereka.
+    ---
+    tags:
+      - Auth
+    parameters:
+      - in: body
+        name: data_register
+        required: true
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+              description: Username unik untuk pengguna
+            email:
+              type: string
+              description: Alamat email pengguna
+            no_hp:
+              type: string
+              description: Nomor handphone pengguna
+            password:
+              type: string
+              description: Password untuk akun pengguna
+          required:
+            - username
+            - email
+            - no_hp
+            - password
+    responses:
+      200:
+        description: OTP berhasil dikirim ke email pengguna.
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: pending
+            message:
+              type: string
+              example: OTP telah dikirim ke email kamu.
+      400:
+        description: Field yang wajib tidak lengkap.
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: error
+            message:
+              type: string
+              example: Semua field wajib diisi.
+      409:
+        description: Email atau username sudah terdaftar.
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: error
+            message:
+              type: string
+              example: Email sudah terdaftar.
     """
     
     data = request.get_json()
@@ -155,20 +204,56 @@ def api_register():
 def api_verify_otp():
   
     """
-    Verify user's account using the OTP sent to their email.
-
-    Expected JSON body:
-    {
-        "otp": "string"
-    }
-
-    Session data must include:
-        - email: the registered email address
-
-    Returns:
-        200 OK: Account successfully verified.
-        400 Bad Request: Missing OTP/email, wrong OTP, or expired OTP.
-        404 Not Found: User not found.
+    Verifikasi akun pengguna menggunakan OTP yang dikirim ke email.
+    ---
+    tags:
+      - Auth
+    parameters:
+      - in: body
+        name: data_otp
+        required: true
+        schema:
+          type: object
+          properties:
+            otp:
+              type: string
+              description: Kode OTP yang dikirim ke email
+          required:
+            - otp
+    responses:
+      200:
+        description: Akun berhasil diverifikasi.
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            message:
+              type: string
+              example: Akun berhasil diverifikasi.
+      400:
+        description: Permintaan tidak valid (OTP/email kosong, OTP salah, atau OTP kedaluwarsa).
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: error
+            message:
+              type: string
+              example: OTP salah atau sudah kedaluwarsa.
+      404:
+        description: Pengguna tidak ditemukan.
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: error
+            message:
+              type: string
+              example: User tidak ditemukan.
     """
     
     data = request.get_json()
@@ -207,17 +292,56 @@ def api_verify_otp():
 def resend_otp():
 
     """
-    Resend a new OTP to the user's email if not yet verified.
-
-    Expected JSON body:
-    {
-        "email": "string"
-    }
-
-    Returns:
-        200 OK: New OTP sent successfully.
-        400 Bad Request: Email is missing or account is already verified.
-        404 Not Found: User with the provided email does not exist.
+    Kirim ulang OTP baru ke email pengguna jika belum terverifikasi.
+    ---
+    tags:
+      - Auth
+    parameters:
+      - in: body
+        name: data_email
+        required: true
+        schema:
+          type: object
+          properties:
+            email:
+              type: string
+              description: Email yang ingin dikirim ulang OTP
+          required:
+            - email
+    responses:
+      200:
+        description: OTP baru berhasil dikirim.
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            message:
+              type: string
+              example: OTP baru telah dikirim.
+      400:
+        description: Email kosong atau akun sudah terverifikasi.
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: error
+            message:
+              type: string
+              example: Email wajib diisi atau akun sudah terverifikasi.
+      404:
+        description: User dengan email tersebut tidak ditemukan.
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: error
+            message:
+              type: string
+              example: User tidak ditemukan.
     """
     
     data = request.get_json()
