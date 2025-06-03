@@ -164,10 +164,10 @@ def api_register():
     data = request.get_json()
     username = data.get('username')
     email = data.get('email')
-    no_hp = data.get('no_hp')
+    # no_hp = data.get('no_hp')
     password = data.get('password')
 
-    if not all([username, email, no_hp, password]):
+    if not all([username, email, password]):
         return jsonify({'status': 'error', 'message': 'Semua field wajib diisi.'}), 400
 
     if user_model.find_by_email(email):
@@ -182,7 +182,7 @@ def api_register():
     user_data = {
         'username': username,
         'email': email,
-        'no_hp': no_hp,
+        'no_hp': None,
         'password': hashed_password,
         'created_at': datetime.utcnow(),
         'is_verified': False,

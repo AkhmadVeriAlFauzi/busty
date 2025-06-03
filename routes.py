@@ -104,7 +104,7 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         email = request.form['email']
-        no_hp = request.form['no_hp']
+        # no_hp = request.form['no_hp']
         password = request.form['password']
         confirm_password = request.form['confirm_password']
 
@@ -124,7 +124,7 @@ def register():
         user_model.create_user(
             username,
             email,
-            no_hp,
+            
             generate_password_hash(password),
             otp,
             expired_time

@@ -9,12 +9,12 @@ class User:
     def __init__(self, db):
         self.collection = db['user']
 
-    def create_user(self, username, email, no_hp, password, otp, otp_expired):
+    def create_user(self, username, email, password, otp, otp_expired):
         # hashed_password = generate_password_hash(password)
         user_data = {
             'username': username,
             'email': email,
-            'no_hp': no_hp,
+            'no_hp': None,
             'password': password,
             'created_at': datetime.utcnow(),
             'is_verified': False,  # default belum verifikasi
