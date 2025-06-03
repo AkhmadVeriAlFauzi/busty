@@ -114,16 +114,12 @@ def api_register():
             email:
               type: string
               description: Alamat email pengguna
-            no_hp:
-              type: string
-              description: Nomor handphone pengguna
             password:
               type: string
               description: Password untuk akun pengguna
           required:
             - username
             - email
-            - no_hp
             - password
     responses:
       200:
@@ -258,7 +254,7 @@ def api_verify_otp():
     
     data = request.get_json()
     input_otp = data.get('otp')
-    email = session.get('email')
+    email = data.get('email')
 
     if not input_otp or not email:
         return jsonify({'status': 'error', 'message': 'OTP dan email wajib.'}), 400
@@ -281,9 +277,6 @@ def api_verify_otp():
         '$set': {'is_verified': True},
         '$unset': {'otp': "", 'otp_expired': ""}
     })
-
-    session.pop('otp', None)
-    session.pop('email', None)
 
     return jsonify({'status': 'success', 'message': 'Akun berhasil diverifikasi.'}), 200
 
