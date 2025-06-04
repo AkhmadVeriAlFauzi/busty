@@ -2,18 +2,34 @@ from flask import Flask
 from flasgger import Swagger
 from flask_cors import CORS  # ✅ Import CORS
 from routes import main, auth
-from extensions import mongo, mail
+from extensions import mongo, mail, oauth
 from api.api import api
 from dotenv import load_dotenv
 import os
 import redis
 import uuid
+# import user_model
 
 
 # ⏬ Load isi .env
 load_dotenv()
 
 app = Flask(__name__)
+oauth.init_app(app)
+google = oauth.register(
+    name='google',
+    client_id=os.getenv("GOOGLE_CLIENT_ID"),
+    client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
+    access_token_url='https://oauth2.googleapis.com/token',
+    access_token_params=None,
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+    authorize_params=None,
+    api_base_url='https://www.googleapis.com/oauth2/v1/',
+    userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo',
+    client_kwargs={'scope': 'openid email profile'},
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+)
+# user_model.google = google
 
 swagger_config = {
     "headers": [],

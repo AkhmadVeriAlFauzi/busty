@@ -408,7 +408,7 @@ def api_login():
 
     payload = {
         'user_id': str(user['_id']),
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+        'exp': datetime.utcnow() + timedelta(hours=1)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 

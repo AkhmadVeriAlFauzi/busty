@@ -5,7 +5,7 @@ from pymongo import MongoClient
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 from flask_mail import Message
-from extensions import mail, mongo
+from extensions import mail, mongo, oauth
 from models.user import User
 from dotenv import load_dotenv
 from imap_tools import MailBox, AND
@@ -28,7 +28,6 @@ client = MongoClient('mongodb+srv://user:OG2QqFuCYwkoWBek@capstone.fqvkpyn.mongo
 db = client['busty_db']
 dbcuaca = client['cuaca_db']
 user_model = User(db)
-
 
 
 auth = Blueprint('auth', __name__, url_prefix='/auth')
@@ -138,6 +137,41 @@ def register():
         return redirect(url_for('auth.verify_otp'))
 
     return render_template('auth/register.html')
+
+# Register Google OAuth
+@auth.route('/register-google')
+def register_google():
+    redirect_uri = url_for('auth.google_callback', _external=True)
+    return oauth.google.authorize_redirect(redirect_uri)
+
+@auth.route('/google/callback')
+def google_callback():
+    token = oauth.google.authorize_access_token()
+    resp = oauth.google.get('userinfo')
+    user_info = resp.json()
+
+    email = user_info.get('email')
+    username = user_info.get('name')  # Bisa juga pakai 'given_name'
+
+    # Cek apakah user sudah terdaftar
+    existing_user = user_model.find_by_email(email)
+    if existing_user:
+        flash('Email sudah terdaftar. Silakan login.', 'info')
+        return redirect(url_for('auth.login'))
+
+    # Simpan ke database dengan status langsung terverifikasi
+    user_model.create_user(
+        username=username,
+        email=email,
+        password=None,  # Karena dari Google OAuth
+        otp=None,
+        otp_expired=None,
+        # # is_verified=True
+    )
+
+    flash('Registrasi berhasil menggunakan Google. Silakan login.', 'success')
+    return redirect(url_for('auth.login'))
+
 
 
 
