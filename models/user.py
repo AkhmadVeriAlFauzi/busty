@@ -9,7 +9,7 @@ class User:
     def __init__(self, db):
         self.collection = db['user']
 
-    def create_user(self, username, email, password, otp, otp_expired):
+    def create_user(self, username, email, password, otp, otp_expired, is_verified=False):
         # hashed_password = generate_password_hash(password)
         user_data = {
             'username': username,
@@ -17,7 +17,7 @@ class User:
             'no_hp': None,
             'password': password,
             'created_at': datetime.utcnow(),
-            'is_verified': False,  # default belum verifikasi
+            'is_verified': is_verified,  # default belum verifikasi
             'otp': otp ,
             'otp_expired': otp_expired
         }

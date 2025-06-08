@@ -1,0 +1,64 @@
+{% extends 'cms_page/cmsbase.html' %}
+
+{% block title %}Busty | Edit Armada{% endblock %}
+{% block page_title %}Edit Armada{% endblock %}
+
+{% block content %}
+<div class="flex">
+    <main class="flex-1 bg-gray-50 min-h-screen py-10 px-6 ">
+
+        <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Edit Data Rute Operasional</h2>
+
+            <form method="POST" action="{{ url_for('main.update_rute') }}">
+                <!-- Hidden ID -->
+                <input type="hidden" name="rute_id" value="{{ rute_data._id }}">
+
+                <!-- Nopol -->
+                <div class="mb-4">
+                    <label for="terminal_awal" class="block text-sm font-medium text-gray-700 mb-1">Terminal Awal</label>
+                    <input type="text" name="terminal_awal" id="terminal_awal" value="{{ rute_data.terminal_awal }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <!--  -->
+                <div class="mb-4">
+                    <label for="terminal_tujuan" class="block text-sm font-medium text-gray-700 mb-1">Terminal Tujuan</label>
+                    <input type="text" name="terminal_tujuan" id="terminal_tujuan" value="{{ rute_data.terminal_tujuan }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div class="mb-4">
+                    <label for="tanggal" class="block text-sm font-medium text-gray-700 mb-1">Tanggal</label>
+                    <input type="text" name="tanggal" id="tanggal" value="{{ rute_data.tanggal }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:outline-none">
+                </div>
+                
+                <div class="mb-4">
+                    <label for="kedatangan" class="block text-sm font-medium text-gray-700 mb-1">Kedatangan</label>
+                    <input type="text" name="kedatangan" id="kedatangan" value="{{ rute_data.kedatangan }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                <div class="mb-4">
+                    <label for="jumlah_penumpang" class="block text-sm font-medium text-gray-700 mb-1">Jumlah Penumpang</label>
+                    <input type="text" name="jumlah_penumpang" id="jumlah_penumpang" value="{{ rute_data.jumlah_penumpang }}"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:outline-none">
+                </div>
+
+                
+
+                <!-- Tombol Aksi -->
+                <div class="flex justify-between">
+                    <a href="{{ url_for('main.list_rute') }}"
+                        class="bg-gray-100 hover:bg-gray-400 text-gray-800 px-5 py-2 rounded-md transition">Kembali</a>
+
+                    <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md transition">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+
+    </main>
+</div>
+{% endblock %}

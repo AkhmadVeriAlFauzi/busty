@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from bson import ObjectId
 from models.user import User
 from pymongo import MongoClient
@@ -10,12 +10,16 @@ from models.user import User
 from dotenv import load_dotenv
 from imap_tools import MailBox, AND
 from datetime import datetime, timedelta
+from functools import wraps
 
 import os
 import re
 import random
 import bcrypt
 import smtplib
+import jwt
+from flask import current_app
+from datetime import datetime, timedelta
 
 # Load .env file
 load_dotenv()
@@ -31,6 +35,15 @@ user_model = User(db)
 
 
 auth = Blueprint('auth', __name__, url_prefix='/auth')
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            flash("Kamu harus login dulu!", "warning")
+            return redirect(url_for('auth.login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 def generate_otp():
     return str(random.randint(100000, 999999))
@@ -71,30 +84,50 @@ def extract_otp(email_text):
 def index():
     return render_template('index.html')
 
-@auth.route('/login', methods=['GET', 'POST'])
+@auth.route('/login', methods=['GET','POST'])
 def login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
+    if request.method == 'GET':
+        return render_template('auth/login.html')  # tampilan form login
 
-        # Cari user berdasarkan email
-        user = user_model.find_by_email(email)
+    email = request.json.get('email')
+    password = request.json.get('password')
 
-        if not user:
-            flash('Email tidak terdaftar.', 'danger')
-            return redirect(url_for('auth.login'))
-        
-        if user and check_password_hash(user['password'], password):
-        # Login berhasil
-            session['user_id'] = str(user['_id'])
-            session['username'] = user['username']
-            flash(f'Selamat datang, {user["username"]}!', 'success')
-            return redirect(url_for('main.dashboard'))
-        else:
-            flash('Password salah.', 'danger')
-            return redirect(url_for('auth.login'))
-        
-    return render_template('auth/login.html')
+    user = user_model.find_by_email(email)
+
+    if not user:
+        return jsonify({
+            'status': 'error',
+            'message': 'Email tidak terdaftar.'
+        }), 404
+
+    if not user.get('password'):
+        return jsonify({
+            'status': 'warning',
+            'message': 'Akun ini belum memiliki password. Silakan login dengan Google atau setel password terlebih dahulu.'
+        }), 403
+
+    if check_password_hash(user['password'], password):
+        payload = {
+            'user_id': str(user['_id']),
+            'exp': datetime.utcnow() + timedelta(hours=24)
+        }
+        token = jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+
+        return jsonify({
+            'status': 'success',
+            'message': f'Selamat datang, {user["username"]}!',
+            'token': token,
+            'data': {
+                'user_id': str(user['_id']),
+                'username': user['username'],
+                'email': user['email']
+            }
+        }), 200
+
+    return jsonify({
+        'status': 'error',
+        'message': 'Password salah.'
+    }), 401
 
 # routes.py
 
@@ -166,13 +199,52 @@ def google_callback():
         password=None,  # Karena dari Google OAuth
         otp=None,
         otp_expired=None,
-        # # is_verified=True
+        is_verified=True
     )
 
     flash('Registrasi berhasil menggunakan Google. Silakan login.', 'success')
     return redirect(url_for('auth.login'))
 
+@auth.route('/login-google')
+def login_google():
+    redirect_uri = url_for('auth.google_login_callback', _external=True)
+    print("Redirect URI:", redirect_uri)
+    return oauth.google.authorize_redirect(redirect_uri)
 
+@auth.route('/google/login/callback')
+def google_login_callback():
+    token = oauth.google.authorize_access_token()
+    resp = oauth.google.get('userinfo')
+    user_info = resp.json()
+
+    email = user_info.get('email')
+    username = user_info.get('given_name') 
+
+    if not email:
+        flash('Gagal mengambil email dari Google.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    existing_user = user_model.find_by_email(email)
+
+    if existing_user:
+        session['user_id'] = str(existing_user['_id'])
+        session['username'] = existing_user.get('username', username)
+        flash(f'Selamat datang kembali, {session["username"]}!', 'success')
+        return redirect(url_for('main.dashboard'))
+    else:
+        user_model.create_user(
+            username=username,
+            email=email,
+            password=None,
+            otp=None,
+            otp_expired=None,
+            is_verified=True
+        )
+        new_user = user_model.find_by_email(email)
+        session['user_id'] = str(new_user['_id'])
+        session['username'] = username
+        flash('Registrasi dan login berhasil menggunakan Google.', 'success')
+        return redirect(url_for('main.dashboard'))
 
 
 @auth.route('/verify-otp', methods=['GET', 'POST'])
@@ -221,12 +293,14 @@ def forgot_password():
     return render_template('auth/forgot_password.html')
 
 @main.route('/dashboard')
+@login_required
 def dashboard():
     return render_template('cms_page/dashboard.html')
 
 # Route Pengguna
 
 @main.route('/pengguna')
+@login_required
 def list_pengguna():
     search_query = request.args.get('search', '').strip().lower()
     users = user_model.get_all_users()
@@ -289,6 +363,7 @@ def update_pengguna():
 # Route Detail Cuaca
 
 @main.route('/detail-cuaca')
+@login_required
 def detail_cuaca():
     mode = request.args.get('mode', 'card')
     search_daerah = request.args.get('search_daerah', '').lower()
@@ -325,12 +400,14 @@ def detail_cuaca():
     )
     
 @main.route('/jadwal')
+@login_required
 def jadwal():
     return render_template('cms_page/jadwal/jadwal.html')
 
 # Rute
     
 @main.route('/rute')
+@login_required
 def list_rute():
     search_nama = request.args.get('search_nama', '').lower()
     rute_data = list(db['rute_operasional'].find())
@@ -372,12 +449,80 @@ def tambah_rute():
 
     return render_template('cms_page/rute/tambah_rute.html')
 
+@main.route('/hapus-rute', methods=['POST'])
+def hapus_rute():
+    rute_id = request.form.get('rute')
+    if rute_id:
+        try:
+            result = db['rute_operasional'].delete_one({'_id': ObjectId(rute_id)})
+            if result.deleted_count > 0:
+                flash("Rute berhasil dihapus.", "success")
+            else:
+                flash("Rute tidak ditemukan.", "error")
+        except Exception as e:
+            flash(f"Gagal menghapus rute: {e}", "error")
+    else:
+        flash("ID Rute tidak valid.", "error")
+    return redirect(url_for('main.list_rute'))
+
+@main.route('/cms/edit-rute/<rute_id>', methods=['GET'])
+def edit_rute(rute_id):
+    try:
+        rute_data = db['rute_operasional'].find_one({'_id': ObjectId(rute_id)})
+    except Exception as e:
+        flash(f"ID rute tidak valid: {e}", "error")
+        return redirect(url_for('main.list_rute'))
+
+    if not rute_data:
+        flash("Rute tidak ditemukan.", "error")
+        return redirect(url_for('main.list_rute'))
+
+    return render_template('cms_page/rute/edit_rute.html', rute_data=rute_data)
+
+
+@main.route('/update-rute', methods=['POST'])
+def update_rute():
+    rute_id = request.form.get('rute_id')
+    terminal_awal = request.form.get('terminal_awal')
+    terminal_tujuan = request.form.get('terminal_tujuan')
+    tanggal = request.form.get('tanggal')
+    kedatangan = request.form.get('kedatangan')
+    jumlah_penumpang = request.form.get('jumlah_penumpang')
+
+    if not rute_id or not terminal_awal or not terminal_tujuan or not tanggal:
+        flash("Data tidak lengkap.", "error")
+        return redirect(url_for('main.list_rute'))
+
+    try:
+        result = db['rute_operasional'].update_one(
+            {'_id': ObjectId(rute_id)},
+            {'$set': {
+                'rute_id': rute_id,
+                'terminal_awal': terminal_awal,
+                'terminal_tujuan': terminal_tujuan,
+                'tanggal': tanggal,
+		'kedatangan': kedatangan,
+		'jumlah_penumpang': jumlah_penumpang,
+                'updated_at': datetime.utcnow()
+            }}
+        )
+        if result.modified_count > 0:
+            flash("Data rute berhasil diperbarui.", "success")
+        else:
+            flash("Tidak ada perubahan pada data rute.", "info")
+    except Exception as e:
+        flash(f"Gagal update rute: {e}", "error")
+
+    return redirect(url_for('main.list_rute'))
+
+
 
 
 
 # Route Armada
 
 @main.route('/armada')
+@login_required
 def list_armada():
     search_nama = request.args.get('search_nama', '').lower()
     armada_data = list(db['armada'].find())
@@ -486,6 +631,7 @@ def update_armada():
 
 
 @main.route('/artikel')
+@login_required
 def list_artikel():
     search_judul = request.args.get('search_judul', '').lower()
     artikel_data = list(db['artikel'].find())
@@ -534,4 +680,6 @@ def tambah_artikel():
 
 @auth.route('/logout')
 def logout():
+    session.clear()  # Hapus semua data session
+    flash('Kamu sudah logout.', 'success')
     return redirect(url_for('auth.login'))

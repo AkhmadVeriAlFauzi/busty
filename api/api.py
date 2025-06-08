@@ -358,6 +358,8 @@ def resend_otp():
     })
     send_otp_email(email, new_otp, expiry_minutes=5)
     return jsonify({'status': 'success', 'message': 'OTP baru telah dikirim.'}), 200
+  
+
 
 
 @api.route('/login', methods=['POST'])
@@ -413,6 +415,13 @@ def api_login():
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
     return jsonify({'status': 'success', 'token': token}), 200
+  
+  
+# @api.route('/api/login-google')
+# def api_login_google():
+#     redirect_uri = url_for('api_auth.api_google_login_callback', _external=True)
+#     return oauth.google.authorize_redirect(redirect_uri)
+
 
 
 @api.route('/data-cuaca', methods=['GET'])

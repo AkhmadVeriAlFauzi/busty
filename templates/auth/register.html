@@ -87,19 +87,18 @@
                         class="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600">
                         Register
                     </button>
-
-                    <div class="text-center mt-4">
-                        <p class="text-sm">Already have an account?
-                            <a href="{{ url_for('auth.login') }}" class="text-blue-50">Login here</a>
-                        </p>
-                    </div>
-
-                    <div class="text-center mt-4">
+                    
+                    <!-- <div class="text-center mt-4">
                         <p class="text-sm">Already have an account?
                             <a href="{{ url_for('auth.register_google') }}" class="text-blue-50">google</a>
                         </p>
+                    </div> -->
+                    
+                    <div class="text-center mt-4">
+                        <p class="text-sm">Sudah punya akun?
+                            <a href="{{ url_for('auth.login') }}" class="text-blue-500">Login</a>
+                        </p>
                     </div>
-
                     
                 </form>
             </div>

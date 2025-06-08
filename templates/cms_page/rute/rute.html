@@ -57,19 +57,19 @@
                         <td class="px-6 py-4 text-sm">
                             {{ item.kedatangan if item.kedatangan else '-' }}
                         </td>
-
                         <td class="px-6 py-4 text-sm">{{ item.jumlah_penumpang }}</td>
                         <td class="px-6 py-4 text-center">
                             <div class="flex justify-center gap-2">
-                                <button onclick="confirmEdit()"
+                                <button onclick="confirmEdit('{{ url_for('main.edit_rute', rute_id=item._id) }}')"
                                     class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-md text-sm transition">
                                     Edit
                                 </button>
 
-                                <button onclick="confirmDelete()"
+                                <button onclick="confirmDelete('{{ item._id }}', '{{ item.terminal_tujuan }}')"
                                     class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm transition">
                                     Hapus
                                 </button>
+
                             </div>
                         </td>
                     </tr>
@@ -84,5 +84,55 @@
 
     </main>
 </div>
+
+<script>
+
+    function confirmEdit(url) {
+    Swal.fire({
+      title: 'Edit Data?',
+      text: 'Kamu akan diarahkan ke halaman edit.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, Edit',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: '#38a169', // hijau
+      cancelButtonColor: '#6c757d'  // abu-abu
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = url;
+      }
+    });
+  }
+
+    function confirmDelete(id, terminal_tujuan) {
+        Swal.fire({
+            title: `Yakin hapus rute "${terminal_tujuan}"?`,
+            text: "Data yang dihapus tidak bisa dikembalikan!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e3342f',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Hapus',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Kirim form delete pakai fetch POST
+                fetch("{{ url_for('main.hapus_rute') }}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": "{{ csrf_token() if csrf_token else '' }}"
+                    },
+                    body: `rute=${id}`
+                }).then(res => {
+                    if (res.redirected) {
+                        window.location.href = res.url;
+                    }
+                });
+            }
+        });
+    }
+</script>
+
 
 {% endblock %}
