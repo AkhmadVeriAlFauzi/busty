@@ -52,20 +52,26 @@
           <tr class="border-b hover:bg-gray-50 transition">
             <td class="px-6 py-4 text-sm">{{ item._id }}</td>
             <td class="px-6 py-4 text-sm">
-              <img src="{{ url_for('static', filename='image/' ~ item.image) }}" alt="img"
+              <img src="{{ url_for('static', filename='uploads/artikel/' ~ item.gambar) }}" alt="img"
                 class="w-16 h-16 object-cover rounded-md" />
             </td>
             <td class="px-6 py-4 text-sm">{{ item.judul }}</td>
-            <td class="px-6 py-4 text-sm">{{ item.sub_judul }}</td>
+            <td class="px-6 py-4 text-sm">{{ item.subjudul }}</td>
             <td class="px-6 py-4 text-sm">{{ item.konten[:50] }}{% if item.konten|length > 50 %}...{% endif %}</td>
             <td class="px-6 py-4 text-center">
               <div class="flex justify-center gap-2">
-                <a href="#" class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-md text-sm transition">Edit</a>
-                <a href="#" onclick="return confirm('Yakin ingin menghapus pengguna ini?');"
-                  class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm transition">Hapus</a>
+                <button onclick="confirmEdit('{{ url_for('main.edit_artikel', artikel_id=item._id) }}')"
+                  class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-md text-sm transition">
+                  Edit
+                </button>
+
+                <button onclick="confirmDelete('{{ item._id }}', '{{ item.nama_bus }}')"
+                  class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm transition">
+                  Hapus
+                </button>
+
               </div>
             </td>
-          </tr>
           {% else %}
           <tr>
             <td colspan="6" class="px-6 py-6 text-center text-gray-500 text-sm">Belum ada artikel.</td>
@@ -77,5 +83,53 @@
 
   </main>
 </div>
+
+<script>
+  function confirmEdit(url) {
+    Swal.fire({
+      title: 'Edit Data?',
+      text: 'Kamu akan diarahkan ke halaman edit.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Ya, Edit',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: '#38a169', // hijau
+      cancelButtonColor: '#6c757d'  // abu-abu
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = url;
+      }
+    });
+  }
+
+  function confirmDelete(id, judul) {
+    Swal.fire({
+      title: `Yakin hapus artikel "${judul}"?`,
+      text: "Data yang dihapus tidak bisa dikembalikan!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e3342f',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Hapus',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Kirim form delete pakai fetch POST
+        fetch("{{ url_for('main.hapus_artikel') }}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": "{{ csrf_token() if csrf_token else '' }}"
+          },
+          body: `artikel_id=${id}`
+        }).then(res => {
+          if (res.redirected) {
+            window.location.href = res.url;
+          }
+        });
+      }
+    });
+  }
+</script>
 
 {% endblock %}

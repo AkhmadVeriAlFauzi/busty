@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 from imap_tools import MailBox, AND
 from datetime import datetime, timedelta
 from functools import wraps
+from flask import current_app as app
+
 
 import os
 import re
@@ -33,6 +35,13 @@ db = client['busty_db']
 dbcuaca = client['cuaca_db']
 user_model = User(db)
 
+#untuk upload file
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+# stop sampe sini
 
 auth = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -650,33 +659,99 @@ def list_artikel():
 @main.route('/tambah-artikel', methods=['GET', 'POST'])
 def tambah_artikel():
     if request.method == 'POST':
-        image_file = request.files.get('image')  # ambil file gambar
         judul = request.form.get('judul')
-        sub_judul = request.form.get('sub_judul')
+        subjudul = request.form.get('subjudul')
         konten = request.form.get('konten')
+        file = request.files.get('gambar')
 
-        if not all([image_file, judul, sub_judul, konten]):
+        if not all([judul, subjudul, konten]):
             flash("Harap isi semua data yang diperlukan.", "error")
             return redirect(url_for('main.tambah_artikel'))
 
-        # Simpan file gambar ke folder static/image
-        filename = secure_filename(image_file.filename)
-        filepath = os.path.join('static/image', filename)
-        image_file.save(filepath)
+        filename = None
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            upload_folder = os.path.join(app.root_path, 'static/uploads/artikel')
+            os.makedirs(upload_folder, exist_ok=True)
+            file.save(os.path.join(upload_folder, filename))
+        elif file and file.filename != '':
+            flash("Format gambar tidak didukung.", "error")
+            return redirect(url_for('main.tambah_artikel'))
 
-        # Simpan nama file-nya aja ke database
         db['artikel'].insert_one({
-            'image': filename,
             'judul': judul,
-            'sub_judul': sub_judul,
+            'subjudul': subjudul,
             'konten': konten,
+            'gambar': filename,
             'created_at': datetime.utcnow()
         })
 
-        flash("Data artikel berhasil ditambahkan.", "success")
+        flash("Artikel berhasil ditambahkan.", "success")
         return redirect(url_for('main.list_artikel'))
 
     return render_template('cms_page/artikel/tambah_artikel.html')
+
+@main.route('/hapus-artikel', methods=['POST'])
+def hapus_artikel():
+    artikel_id = request.form.get('artikel_id')
+    if artikel_id:
+        try:
+            result = db['artikel'].delete_one({'_id': ObjectId(artikel_id)})
+            if result.deleted_count > 0:
+                flash("Artikel berhasil dihapus.", "success")
+            else:
+                flash("Artikel tidak ditemukan.", "error")
+        except Exception as e:
+            flash(f"Gagal menghapus artikel: {e}", "error")
+    else:
+        flash("ID artikel tidak valid.", "error")
+    return redirect(url_for('main.list_artikel'))
+
+@main.route('/cms/edit-artikel/<artikel_id>', methods=['GET'])
+def edit_artikel(artikel_id):
+    try:
+        artikel_data = db['artikel'].find_one({'_id': ObjectId(artikel_id)})
+    except Exception as e:
+        flash(f"ID artikel tidak valid: {e}", "error")
+        return redirect(url_for('main.list_artikel'))
+
+    if not artikel_data:
+        flash("Artikel tidak ditemukan.", "error")
+        return redirect(url_for('main.list_artikel'))
+
+    return render_template('cms_page/artikel/edit_artikel.html', artikel_data=artikel_data)
+
+@main.route('/update-artikel', methods=['POST'])
+def update_artikel():
+    artikel_id = request.form.get('artikel_id')
+    judul = request.form.get('judul')
+    subjudul = request.form.get('subjudul')
+    konten = request.form.get('konten')
+
+    if not artikel_id or not judul or not subjudul or not konten:
+        flash("Data tidak lengkap.", "error")
+        return redirect(url_for('main.list_artikel'))
+
+    try:
+        result = db['artikel'].update_one(
+            {'_id': ObjectId(artikel_id)},
+            {'$set': {
+                'judul': judul,
+                'subjudul': subjudul,
+                'konten': konten,
+                'updated_at': datetime.utcnow()
+            }}
+        )
+        if result.modified_count > 0:
+            flash("Artikel berhasil diperbarui.", "success")
+        else:
+            flash("Tidak ada perubahan pada data artikel.", "info")
+    except Exception as e:
+        flash(f"Gagal update artikel: {e}", "error")
+
+    return redirect(url_for('main.list_artikel'))
+
+
 
 @auth.route('/logout')
 def logout():
