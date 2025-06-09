@@ -418,17 +418,27 @@ def detail_cuaca():
 @login_required
 def list_rute():
     search_nama = request.args.get('search_nama', '').lower()
-    rute_data = list(db['rute_operasional'].find())
+    rute_data = []
 
-    # filter berdasarkan pencarian nama bus atau nopol
+    for rute in db['rute_operasional'].find():
+        # Ambil data armada berdasarkan id_armada
+        armada = db['armada'].find_one({'_id': rute.get('id_armada')})
+        rute['armada'] = armada  # tambahkan ke data rute
+
+        rute_data.append(rute)
+
+    # filter berdasarkan pencarian
     if search_nama:
         rute_data = [
             item for item in rute_data
             if search_nama in item.get('tanggal', '').lower() or
-               search_nama in item.get('terminal_tujuan', '').lower()
+               search_nama in item.get('terminal_tujuan', '').lower() or
+               search_nama in item.get('username', '').lower() or
+               search_nama in (item['armada']['nama_bus'].lower() if item.get('armada') else '')
         ]
 
     return render_template('cms_page/rute/rute.html', rute_data=rute_data)
+
 
 
 @main.route('/tambah-rute', methods=['GET', 'POST'])
@@ -438,24 +448,36 @@ def tambah_rute():
         terminal_tujuan = request.form.get('terminal_tujuan')
         tanggal = request.form.get('tanggal')
         jumlah_penumpang = request.form.get('jumlah_penumpang')
+        user_id = request.form.get('user_id')
+        armada_id = request.form.get('armada_id')
 
-        if not all([terminal_awal, terminal_tujuan, tanggal, jumlah_penumpang]):
+        if not all([terminal_awal, terminal_tujuan, tanggal, jumlah_penumpang, user_id, armada_id]):
             flash("Harap isi semua data yang diperlukan.", "error")
             return redirect(url_for('main.tambah_rute'))
 
-        # Simpan ke MongoDB
+        user = db['user'].find_one({'_id': ObjectId(user_id)})
+        armada = db['armada'].find_one({'_id': ObjectId(armada_id)})
+
         db['rute_operasional'].insert_one({
             'terminal_awal': terminal_awal,
             'terminal_tujuan': terminal_tujuan,
             'tanggal': tanggal,
-	        'jumlah_penumpang': jumlah_penumpang,
+            'jumlah_penumpang': jumlah_penumpang,
+            'user_id': user_id,
+            'username': user.get('username'),
+            'armada_id': armada_id,
+            'nama_bus': armada.get('nama_bus'),
+            'nopol': armada.get('nopol'),
             'created_at': datetime.utcnow()
         })
 
-        flash("Data armada berhasil ditambahkan.", "success")
-        return redirect(url_for('main.list_rute'))  # Ganti ke route list kalau ada
+        flash("Data rute berhasil ditambahkan.", "success")
+        return redirect(url_for('main.list_rute'))
 
-    return render_template('cms_page/rute/tambah_rute.html')
+    users = list(db['user'].find())
+    armadas = list(db['armada'].find())
+    return render_template('cms_page/rute/tambah_rute.html', users=users, armadas=armadas)
+
 
 @main.route('/hapus-rute', methods=['POST'])
 def hapus_rute():
@@ -477,6 +499,8 @@ def hapus_rute():
 def edit_rute(rute_id):
     try:
         rute_data = db['rute_operasional'].find_one({'_id': ObjectId(rute_id)})
+        users = list(db['user'].find())
+        armadas = list(db['armada'].find())
     except Exception as e:
         flash(f"ID rute tidak valid: {e}", "error")
         return redirect(url_for('main.list_rute'))
@@ -485,7 +509,8 @@ def edit_rute(rute_id):
         flash("Rute tidak ditemukan.", "error")
         return redirect(url_for('main.list_rute'))
 
-    return render_template('cms_page/rute/edit_rute.html', rute_data=rute_data)
+    return render_template('cms_page/rute/edit_rute.html', rute_data=rute_data, users=users, armadas=armadas)
+
 
 
 @main.route('/update-rute', methods=['POST'])
@@ -496,21 +521,30 @@ def update_rute():
     tanggal = request.form.get('tanggal')
     kedatangan = request.form.get('kedatangan')
     jumlah_penumpang = request.form.get('jumlah_penumpang')
+    user_id = request.form.get('user_id')
+    armada_id = request.form.get('armada_id')
 
-    if not rute_id or not terminal_awal or not terminal_tujuan or not tanggal:
+    if not all([rute_id, terminal_awal, terminal_tujuan, tanggal, user_id, armada_id]):
         flash("Data tidak lengkap.", "error")
         return redirect(url_for('main.list_rute'))
+
+    user = db['user'].find_one({'_id': ObjectId(user_id)})
+    armada = db['armada'].find_one({'_id': ObjectId(armada_id)})
 
     try:
         result = db['rute_operasional'].update_one(
             {'_id': ObjectId(rute_id)},
             {'$set': {
-                'rute_id': rute_id,
                 'terminal_awal': terminal_awal,
                 'terminal_tujuan': terminal_tujuan,
                 'tanggal': tanggal,
-		'kedatangan': kedatangan,
-		'jumlah_penumpang': jumlah_penumpang,
+                'kedatangan': kedatangan,
+                'jumlah_penumpang': jumlah_penumpang,
+                'user_id': user_id,
+                'username': user.get('username'),
+                'armada_id': armada_id,
+                'nama_bus': armada.get('nama_bus'),
+                'nopol': armada.get('nopol'),
                 'updated_at': datetime.utcnow()
             }}
         )
@@ -523,8 +557,10 @@ def update_rute():
 
     return redirect(url_for('main.list_rute'))
 
-
-
+@main.route('/tracking')
+@login_required
+def tracking():
+    return render_template('cms_page/rute/tracking.html')
 
 
 # Route Armada

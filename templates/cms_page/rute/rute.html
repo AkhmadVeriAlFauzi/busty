@@ -1,15 +1,12 @@
-<!-- templates/cms/dashboard.html -->
 {% extends 'cms_page/cmsbase.html' %}
 
 {% block title %}Busty | Rute{% endblock %}
 {% block page_title %}Rute{% endblock %}
 
 {% block content %}
-<!-- Sidebar -->
 <div class="flex">
     <main class="flex-1 bg-gray-50 py-8 px-6">
 
-        <!-- Header Section -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <h3 class="text-2xl font-semibold text-gray-800">Daftar Rute</h3>
 
@@ -24,7 +21,6 @@
                     </button>
                 </form>
 
-                <!-- Tombol Tambah Artikel -->
                 <a href="{{ url_for('main.tambah_rute') }}"
                     class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md transition duration-200 text-center">
                     + Tambah Rute
@@ -32,18 +28,18 @@
             </div>
         </div>
 
-
-        <!-- Table Section -->
         <div class="bg-white rounded-md shadow-sm overflow-visible">
             <table class="min-w-full table-auto border-collapse">
                 <thead class="bg-blue-100 text-gray-700 text-sm uppercase">
                     <tr>
-                        <th class="px-6 py-4 text-left">id</th>
+                        <th class="px-6 py-4 text-left">ID</th>
                         <th class="px-6 py-4 text-left">Terminal Awal</th>
                         <th class="px-6 py-4 text-left">Terminal Tujuan</th>
                         <th class="px-6 py-4 text-left">Tanggal</th>
                         <th class="px-6 py-4 text-left">Kedatangan</th>
                         <th class="px-6 py-4 text-left">Jumlah Penumpang</th>
+                        <th class="px-6 py-4 text-left">Pengemudi</th>
+                        <th class="px-6 py-4 text-left">Armada</th>
                         <th class="px-6 py-4 text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -54,28 +50,48 @@
                         <td class="px-6 py-4 text-sm">{{ item.terminal_awal }}</td>
                         <td class="px-6 py-4 text-sm">{{ item.terminal_tujuan }}</td>
                         <td class="px-6 py-4 text-sm">{{ item.tanggal }}</td>
-                        <td class="px-6 py-4 text-sm">
-                            {{ item.kedatangan if item.kedatangan else '-' }}
-                        </td>
+                        <td class="px-6 py-4 text-sm">{{ item.kedatangan if item.kedatangan else '-' }}</td>
                         <td class="px-6 py-4 text-sm">{{ item.jumlah_penumpang }}</td>
-                        <td class="px-6 py-4 text-center">
-                            <div class="flex justify-center gap-2">
-                                <button onclick="confirmEdit('{{ url_for('main.edit_rute', rute_id=item._id) }}')"
-                                    class="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-md text-sm transition">
-                                    Edit
-                                </button>
+                        <td class="px-6 py-4 text-sm">
+                            {{ item.username if item.username else '-' }}
+                        </td>
+                        <td class="px-4 py-4 text-sm">
+                            {% if item.nama_bus and item.nopol %}
+                            {{ item.nama_bus }} <br> ({{ item.nopol }})
+                            {% elif item.nama_bus %}
+                            {{ item.nama_bus }}
+                            {% elif item.nopol %}
+                            {{ item.nopol }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
 
-                                <button onclick="confirmDelete('{{ item._id }}', '{{ item.terminal_tujuan }}')"
-                                    class="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-sm transition">
-                                    Hapus
+                        <td class="px-6 py-4 text-center relative">
+                            <div class="inline-block text-left">
+                                <button onclick="toggleDropdown(this)" class="focus:outline-none">
+                                    <img src="{{ url_for('static', filename='image/options.svg') }}" alt="More Options"
+                                        class="w-3 h-3 cursor-pointer hover:opacity-80" />
                                 </button>
-
+                                <div
+                                    class="hidden origin-top-right absolute right-0 mt-2 w-28 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                                    <div class="py-1 text-sm text-gray-700">
+                                        <a href="{{ url_for('main.edit_rute', rute_id=item._id) }}"
+                                            class="block px-4 py-2 hover:bg-gray-100">Edit</a>
+                                        <button onclick="confirmDelete('{{ item._id }}', '{{ item.terminal_tujuan }}')"
+                                            class="block w-full text-left px-4 py-2 hover:bg-gray-100">Hapus</button>
+                                        <a href="{{ url_for('main.tracking', rute_id=item._id) }}" class="block px-4 py-2 hover:bg-gray-100">Tracking</a>
+                                    </div>
+                                </div>
                             </div>
                         </td>
+
+
+
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="px-6 py-6 text-center text-gray-500 text-sm">Belum ada rute.</td>
+                        <td colspan="9" class="px-6 py-6 text-center text-gray-500 text-sm">Belum ada rute.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -86,23 +102,22 @@
 </div>
 
 <script>
-
     function confirmEdit(url) {
-    Swal.fire({
-      title: 'Edit Data?',
-      text: 'Kamu akan diarahkan ke halaman edit.',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Ya, Edit',
-      cancelButtonText: 'Batal',
-      confirmButtonColor: '#38a169', // hijau
-      cancelButtonColor: '#6c757d'  // abu-abu
-    }).then((result) => {
-      if (result.isConfirmed) {
-        window.location.href = url;
-      }
-    });
-  }
+        Swal.fire({
+            title: 'Edit Data?',
+            text: 'Kamu akan diarahkan ke halaman edit.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Edit',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#38a169',
+            cancelButtonColor: '#6c757d'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = url;
+            }
+        });
+    }
 
     function confirmDelete(id, terminal_tujuan) {
         Swal.fire({
@@ -116,7 +131,6 @@
             cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) {
-                // Kirim form delete pakai fetch POST
                 fetch("{{ url_for('main.hapus_rute') }}", {
                     method: "POST",
                     headers: {
@@ -132,7 +146,29 @@
             }
         });
     }
-</script>
 
+    // Toggle dropdown
+    function toggleDropdown(button) {
+        const dropdown = button.nextElementSibling;
+        document.querySelectorAll('.dropdown-menu').forEach(el => {
+            if (el !== dropdown) el.classList.add('hidden');
+        });
+        dropdown.classList.toggle('hidden');
+    }
+
+    // Klik luar dropdown nutup
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('td')) {
+            document.querySelectorAll('.dropdown-menu').forEach(el => el.classList.add('hidden'));
+        }
+    });
+
+    // Tambahin class dropdown-menu ke semua menu
+    window.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('[class*="origin-top-right"]').forEach(el => {
+            el.classList.add('dropdown-menu');
+        });
+    });
+</script>
 
 {% endblock %}
