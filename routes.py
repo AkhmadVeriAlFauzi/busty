@@ -13,7 +13,6 @@ from datetime import datetime, timedelta
 from functools import wraps
 from flask import current_app as app
 
-
 import os
 import re
 import random
@@ -408,10 +407,10 @@ def detail_cuaca():
         search_daerah=search_daerah
     )
     
-@main.route('/jadwal')
-@login_required
-def jadwal():
-    return render_template('cms_page/jadwal/jadwal.html')
+# @main.route('/jadwal')
+# @login_required
+# def jadwal():
+#     return render_template('cms_page/jadwal/jadwal.html')
 
 # Rute
     
