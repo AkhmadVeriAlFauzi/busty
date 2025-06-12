@@ -90,7 +90,8 @@ def extract_otp(email_text):
 
 @main.route('/')
 def index():
-    return render_template('index.html')
+    artikel_list = list(db['artikel'].find().sort('created_at', -1))
+    return render_template('index.html', artikel_list=artikel_list)
 
 @auth.route('/login', methods=['GET','POST'])
 def login():
