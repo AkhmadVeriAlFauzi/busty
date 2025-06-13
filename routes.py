@@ -138,7 +138,6 @@ def login():
         'message': 'Password salah.'
     }), 401
 
-# routes.py
 
 @auth.route('/register', methods=['GET', 'POST'])
 def register():

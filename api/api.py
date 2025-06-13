@@ -481,3 +481,69 @@ def get_data_cuaca():
 
     return jsonify(cuaca_data), 200
 
+# API List Artikel =============================================================================================================================
+
+@api.route('/artikel', methods=['GET'])
+@require_auth
+def api_list_artikel():
+    """
+    Ambil daftar artikel dari database
+    ---
+    tags:
+      - Artikel
+    parameters:
+      - name: search_judul
+        in: query
+        type: string
+        required: false
+        description: Filter artikel berdasarkan judul atau tanggal dibuat
+    security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+    responses:
+      200:
+        description: Daftar artikel berhasil diambil
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                  judul:
+                    type: string
+                  isi:
+                    type: string
+                  created_at:
+                    type: string
+      401:
+        description: Token atau API Key tidak valid
+    """
+    search_judul = request.args.get('search_judul', '').lower()
+    artikel_collection = db['artikel']
+
+    artikel_data = list(artikel_collection.find())
+
+    # Filter jika ada query pencarian
+    if search_judul:
+        artikel_data = [
+            item for item in artikel_data
+            if search_judul in item.get('judul', '').lower() or
+               search_judul in item.get('created_at', '').lower()
+        ]
+
+    # Ubah ObjectId ke string
+    for item in artikel_data:
+        item['_id'] = str(item['_id'])
+
+    return jsonify({
+        'status': 'success',
+        'data': artikel_data
+    }), 200
+
