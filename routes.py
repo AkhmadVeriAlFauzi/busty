@@ -350,16 +350,27 @@ def update_pengguna():
     user_id = request.form.get('user_id')
     username = request.form.get('username')
     email = request.form.get('email')
+    no_hp = request.form.get('no_hp')
+    alamat = request.form.get('alamat')
+    password = request.form.get('password')  # Bisa kosong
 
     if not user_id or not username or not email:
         flash("Data tidak lengkap.", "error")
         return redirect(url_for('main.list_pengguna'))
 
+    update_data = {
+        "username": username,
+        "email": email,
+        "no_hp": no_hp,
+        "alamat": alamat,
+    }
+
+    if password:  # Kalau user isi password baru
+        hashed_password = generate_password_hash(password)
+        update_data['password'] = hashed_password
+
     try:
-        user_model.update_user(user_id, {
-            "username": username,
-            "email": email
-        })
+        user_model.update_user(user_id, update_data)
         flash("Pengguna berhasil diperbarui.", "success")
     except Exception as e:
         flash(f"Gagal memperbarui pengguna: {e}", "error")
@@ -447,13 +458,27 @@ def tambah_rute():
         terminal_awal = request.form.get('terminal_awal')
         terminal_tujuan = request.form.get('terminal_tujuan')
         tanggal = request.form.get('tanggal')
+        jam = request.form.get('jam')
         jumlah_penumpang = request.form.get('jumlah_penumpang')
         user_id = request.form.get('user_id')
         armada_id = request.form.get('armada_id')
 
-        if not all([terminal_awal, terminal_tujuan, tanggal, jumlah_penumpang, user_id, armada_id]):
+        if not all([terminal_awal, terminal_tujuan, tanggal, jam, jumlah_penumpang, user_id, armada_id]):
             flash("Harap isi semua data yang diperlukan.", "error")
             return redirect(url_for('main.tambah_rute'))
+        
+        # Ambil dari input HTML yang udah format YYYY-MM-DD
+        tanggal_raw = request.form.get('tanggal')
+
+        try:
+            # Validasi formatnya benar
+            tanggal_obj = datetime.strptime(tanggal_raw, "%Y-%m-%d")
+            # Simpan sebagai string saja (tanpa waktu)
+            tanggal = tanggal_obj.strftime("%Y-%m-%d")
+        except ValueError:
+            flash("Format tanggal tidak valid. Gunakan format YYYY-MM-DD.", "error")
+            return redirect(url_for('main.tambah_rute'))
+
 
         user = db['user'].find_one({'_id': ObjectId(user_id)})
         armada = db['armada'].find_one({'_id': ObjectId(armada_id)})
@@ -462,6 +487,7 @@ def tambah_rute():
             'terminal_awal': terminal_awal,
             'terminal_tujuan': terminal_tujuan,
             'tanggal': tanggal,
+            'jam' : jam,
             'jumlah_penumpang': jumlah_penumpang,
             'user_id': user_id,
             'username': user.get('username'),
@@ -476,7 +502,8 @@ def tambah_rute():
 
     users = list(db['user'].find())
     armadas = list(db['armada'].find())
-    return render_template('cms_page/rute/tambah_rute.html', users=users, armadas=armadas)
+    today = datetime.today().strftime('%Y-%m-%d')
+    return render_template('cms_page/rute/tambah_rute.html', users=users, armadas=armadas, today=today)
 
 
 @main.route('/hapus-rute', methods=['POST'])
@@ -519,13 +546,29 @@ def update_rute():
     terminal_awal = request.form.get('terminal_awal')
     terminal_tujuan = request.form.get('terminal_tujuan')
     tanggal = request.form.get('tanggal')
+    jam = request.form.get('jam')
     kedatangan = request.form.get('kedatangan')
     jumlah_penumpang = request.form.get('jumlah_penumpang')
     user_id = request.form.get('user_id')
     armada_id = request.form.get('armada_id')
 
-    if not all([rute_id, terminal_awal, terminal_tujuan, tanggal, user_id, armada_id]):
+    if not all([rute_id, terminal_awal, terminal_tujuan, tanggal, jam, user_id, armada_id]):
         flash("Data tidak lengkap.", "error")
+        return redirect(url_for('main.list_rute'))
+
+    # Validasi tanggal
+    try:
+        tanggal_obj = datetime.strptime(tanggal, "%Y-%m-%d")
+        tanggal = tanggal_obj.strftime("%Y-%m-%d")
+    except ValueError:
+        flash("Format tanggal tidak valid. Gunakan format YYYY-MM-DD.", "error")
+        return redirect(url_for('main.list_rute'))
+
+    # Validasi kedatangan (optional)
+    try:
+        kedatangan = datetime.strptime(kedatangan, "%Y-%m-%d") if kedatangan else None
+    except ValueError:
+        flash("Format kedatangan tidak valid. Gunakan format YYYY-MM-DD.", "error")
         return redirect(url_for('main.list_rute'))
 
     user = db['user'].find_one({'_id': ObjectId(user_id)})
@@ -538,6 +581,7 @@ def update_rute():
                 'terminal_awal': terminal_awal,
                 'terminal_tujuan': terminal_tujuan,
                 'tanggal': tanggal,
+                'jam': jam,
                 'kedatangan': kedatangan,
                 'jumlah_penumpang': jumlah_penumpang,
                 'user_id': user_id,
@@ -556,6 +600,7 @@ def update_rute():
         flash(f"Gagal update rute: {e}", "error")
 
     return redirect(url_for('main.list_rute'))
+
 
 @main.route('/tracking')
 @login_required

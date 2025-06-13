@@ -423,6 +423,235 @@ def api_login():
 #     return oauth.google.authorize_redirect(redirect_uri)
 
 
+# Api Pengguna =============================================================================================================================
+
+@api.route('/pengguna', methods=['GET'])
+@require_auth
+def api_list_pengguna():
+    """
+    Ambil daftar semua pengguna dari database, bisa dengan pencarian.
+    ---
+    tags:
+      - Pengguna
+    parameters:
+      - in: query
+        name: search
+        type: string
+        required: false
+        description: Kata kunci pencarian berdasarkan username.
+    security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+    responses:
+      200:
+        description: Daftar pengguna berhasil diambil.
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  username:
+                    type: string
+                  email:
+                    type: string
+                  no_hp:
+                    type: string
+                  alamat:
+                    type: string
+                  is_verified:
+                    type: boolean
+                  created_at:
+                    type: string
+      401:
+        description: API key atau token tidak valid.
+    """  
+  
+    search = request.args.get('search', '').lower()
+    users = user_model.get_all_users()
+
+    if search:
+        users = [u for u in users if search in u.get('username', '').lower()]
+
+    # Format respons
+    result = []
+    for user in users:
+        result.append({
+            'id': str(user['_id']),
+            'username': user.get('username'),
+            'email': user.get('email'),
+            'no_hp': user.get('no_hp'),
+            'alamat': user.get('alamat'),
+            'is_verified': user.get('is_verified', False),
+            'created_at': user.get('created_at')
+        })
+
+    return jsonify({'status': 'success', 'data': result}), 200
+
+
+# --- API GET DETAIL PENGGUNA BY ID ---
+@api.route('/pengguna/<user_id>', methods=['GET'])
+@require_auth
+def api_get_pengguna(user_id):
+    """
+    Ambil detail informasi satu pengguna berdasarkan ID.
+    ---
+    tags:
+      - Pengguna
+    parameters:
+      - in: path
+        name: user_id
+        required: true
+        type: string
+        description: ID pengguna (ObjectId)
+    security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+    responses:
+      200:
+        description: Data pengguna berhasil ditemukan.
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: object
+              properties:
+                id:
+                  type: string
+                username:
+                  type: string
+                email:
+                  type: string
+                no_hp:
+                  type: string
+                alamat:
+                  type: string
+                is_verified:
+                  type: boolean
+                created_at:
+                  type: string
+      404:
+        description: Pengguna tidak ditemukan.
+      401:
+        description: API key atau token tidak valid.
+    """
+    try:
+        user = user_model.find_by_id(ObjectId(user_id))
+        if not user:
+            return jsonify({'status': 'error', 'message': 'Pengguna tidak ditemukan'}), 404
+
+        result = {
+            'id': str(user['_id']),
+            'username': user.get('username'),
+            'email': user.get('email'),
+            'no_hp': user.get('no_hp'),
+            'alamat': user.get('alamat'),
+            'is_verified': user.get('is_verified', False),
+            'created_at': user.get('created_at')
+        }
+
+        return jsonify({'status': 'success', 'data': result}), 200
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 400
+
+
+# --- API UPDATE PENGGUNA ---
+@api.route('/pengguna/<user_id>', methods=['PUT'])
+@require_auth
+def api_update_pengguna(user_id):
+    """
+    Perbarui data pengguna berdasarkan ID.
+    ---
+    tags:
+      - Pengguna
+    parameters:
+      - in: path
+        name: user_id
+        required: true
+        type: string
+        description: ID pengguna yang ingin diupdate.
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          properties:
+            username:
+              type: string
+              example: johndoe
+            email:
+              type: string
+              example: johndoe@email.com
+            no_hp:
+              type: string
+              example: "081234567890"
+            alamat:
+              type: string
+              example: Jl. Raya No. 123
+            password:
+              type: string
+              example: newpassword123
+    security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+    responses:
+      200:
+        description: Pengguna berhasil diperbarui atau tidak ada perubahan.
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            message:
+              type: string
+              example: Pengguna berhasil diperbarui.
+      400:
+        description: Field wajib tidak lengkap.
+      500:
+        description: Error dari server saat update.
+      401:
+        description: API key atau token tidak valid.
+    """
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        email = data.get('email')
+        no_hp = data.get('no_hp')
+        alamat = data.get('alamat')
+        password = data.get('password')
+
+        if not username or not email:
+            return jsonify({'status': 'error', 'message': 'Username dan Email wajib diisi.'}), 400
+
+        update_data = {
+            'username': username,
+            'email': email,
+            'no_hp': no_hp,
+            'alamat': alamat,
+        }
+
+        if password:
+            update_data['password'] = generate_password_hash(password)
+
+        result = user_model.update_user(user_id, update_data)
+        if result.modified_count == 0:
+            return jsonify({'status': 'warning', 'message': 'Tidak ada data yang diperbarui.'}), 200
+
+        return jsonify({'status': 'success', 'message': 'Pengguna berhasil diperbarui.'}), 200
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 
 @api.route('/data-cuaca', methods=['GET'])
 @require_auth
@@ -480,6 +709,77 @@ def get_data_cuaca():
         ]
 
     return jsonify(cuaca_data), 200
+  
+  
+# API Rute =============================================================================================================================
+@api.route('/rute/user/<user_id>', methods=['GET'])
+def get_rute_by_user(user_id):
+    """
+    Ambil data rute berdasarkan user_id
+    ---
+    tags:
+      - Rute
+    parameters:
+      - name: user_id
+        in: path
+        type: string
+        required: true
+        description: ID pengguna (driver) yang ingin diambil data rutenya
+    responses:
+      200:
+        description: Daftar rute operasional milik user
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              _id:
+                type: string
+              terminal_awal:
+                type: string
+              terminal_tujuan:
+                type: string
+              tanggal:
+                type: string
+                format: date
+              jam:
+                type: string
+              jumlah_penumpang:
+                type: string
+              armada_id:
+                type: string
+              nama_bus:
+                type: string
+              nopol:
+                type: string
+              created_at:
+                type: string
+                format: date-time
+      500:
+        description: Terjadi kesalahan pada server
+    """
+    try:
+        rutes = db['rute_operasional'].find({'user_id': user_id})
+        result = []
+        for rute in rutes:
+            result.append({
+                "_id": str(rute['_id']),
+                "terminal_awal": rute.get("terminal_awal"),
+                "terminal_tujuan": rute.get("terminal_tujuan"),
+                "tanggal": rute.get("tanggal"),
+                "jam": rute.get("jam"),
+                "jumlah_penumpang": rute.get("jumlah_penumpang"),
+                "armada_id": rute.get("armada_id"),
+                "nama_bus": rute.get("nama_bus"),
+                "nopol": rute.get("nopol"),
+                "created_at": rute.get("created_at").isoformat() if rute.get("created_at") else None
+            })
+
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'message': 'Terjadi kesalahan', 'error': str(e)}), 500
+  
+  
 
 # API List Artikel =============================================================================================================================
 
