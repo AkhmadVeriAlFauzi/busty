@@ -1,47 +1,60 @@
-<!DOCTYPE html>
-<html>
+{% extends 'cms_page/cmsbase.html' %}
 
-<head>
-    <title>Live GPS Tracker</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <style>
-        #map {
-            height: 100vh;
-        }
-    </style>
-</head>
+{% block title %}Busty | Tracking{% endblock %}
+{% block page_title %}Tracking Lokasi{% endblock %}
 
-<body>
-    <div id="map"></div>
+{% block content %}
+<div class="bg-white rounded-md shadow-md p-6 mb-8">
+    <!-- Judul dan tombol dalam satu baris -->
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-800">Live Tracking Lokasi Pengemudi</h2>
+        <a href="{{ url_for('main.list_rute') }}"
+            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition whitespace-nowrap">
+            Kembali ke Daftar Rute
+        </a>
+    </div>
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script>
-        // Data dinamis dari Flask (disuntik via render_template)
-        const userId = "{{ user_id }}";
-        const initialLat = {{ lat }};
-        const initialLng = {{ lng }};
+    <!-- Container map fixed height & responsive -->
+    <div id="map-container" class="w-full h-[500px] rounded overflow-hidden relative z-0">
+        <div id="map" class="absolute inset-0"></div>
+    </div>
+</div>
 
-        // Inisialisasi peta dan marker dari koordinat awal DB
-        const map = L.map('map').setView([initialLat, initialLng], 15);
-        const marker = L.marker([initialLat, initialLng]).addTo(map);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+<!-- Leaflet CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-        // Ambil posisi terbaru dari server setiap 5 detik
+<script>
+    const userId = "{{ user_id }}";
+    const initialLat = {{ lat }};
+    const initialLng = {{ lng }};
+
+    let map, marker;
+
+    function initMap() {
+        map = L.map('map').setView([initialLat, initialLng], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        marker = L.marker([initialLat, initialLng]).addTo(map);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initMap();
+
         setInterval(async () => {
             try {
                 const res = await fetch(`/get_location?user_id=${userId}`);
-                const data = await res.json();
+                if (!res.ok) throw new Error("Gagal ambil lokasi");
 
-                const { lat, lng } = data;
+                const { lat, lng } = await res.json();
                 marker.setLatLng([lat, lng]);
                 map.setView([lat, lng]);
-
-            } catch (error) {
-                console.error('Gagal ambil lokasi:', error);
+            } catch (err) {
+                console.warn("Tracking error:", err);
             }
         }, 5000);
-    </script>
-</body>
-
-</html>
+    });
+</script>
+{% endblock %}
