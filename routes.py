@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from bson import ObjectId
-from models.user import User
 from pymongo import MongoClient
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
@@ -442,14 +441,13 @@ def list_rute():
     if search_nama:
         rute_data = [
             item for item in rute_data
-            if search_nama in item.get('tanggal', '').lower() or
+            if search_nama in str(item.get('tanggal', '')).lower() or
                search_nama in item.get('terminal_tujuan', '').lower() or
                search_nama in item.get('username', '').lower() or
                search_nama in (item['armada']['nama_bus'].lower() if item.get('armada') else '')
         ]
 
     return render_template('cms_page/rute/rute.html', rute_data=rute_data)
-
 
 
 @main.route('/tambah-rute', methods=['GET', 'POST'])
@@ -605,7 +603,61 @@ def update_rute():
 @main.route('/tracking')
 @login_required
 def tracking():
-    return render_template('cms_page/rute/tracking.html')
+    rute_id = request.args.get('rute_id')
+    if not rute_id:
+        print("DEBUG: rute_id tidak ditemukan di URL")
+        return "rute_id tidak ditemukan", 400
+
+    print(f"DEBUG: rute_id dari URL = {rute_id}")
+
+    try:
+        rute = db['rute_operasional'].find_one({'_id': ObjectId(rute_id)})
+    except Exception as e:
+        print(f"DEBUG: Error parsing ObjectId atau query rute: {e}")
+        return "rute_id tidak valid", 400
+
+    if not rute:
+        print("DEBUG: Data rute tidak ditemukan di DB")
+        return "Rute tidak ditemukan", 404
+
+    print(f"DEBUG: Data rute = {rute}")
+
+    user_id = str(rute.get('user_id'))
+    print(f"DEBUG: user_id dari rute = {user_id}")
+
+    lokasi = db['latest_location'].find_one({'user_id': user_id}) or {}
+    print(f"DEBUG: Data lokasi terakhir = {lokasi}")
+
+    lat = lokasi.get('lat', -7.1234)
+    lng = lokasi.get('lng', 110.5678)
+    print(f"DEBUG: Koordinat yang akan ditampilkan = lat: {lat}, lng: {lng}")
+
+    return render_template(
+        'cms_page/rute/tracking.html',
+        user_id=user_id,
+        lat=lat,
+        lng=lng
+    )
+
+@main.route('/get_location')
+def get_location():
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'user_id diperlukan'}), 400
+
+    print(f"[DEBUG] Get location for user_id: {user_id}")
+    
+    lokasi = db.latest_location.find_one({'user_id': str(user_id)})
+
+    if not lokasi:
+        print("[DEBUG] Lokasi tidak ditemukan di DB.")
+        return jsonify({'error': 'Lokasi tidak ditemukan'}), 404
+
+    return jsonify({
+        'lat': lokasi['lat'],
+        'lng': lokasi['lng'],
+        'timestamp': lokasi.get('timestamp')
+    })
 
 
 # Route Armada
@@ -831,6 +883,8 @@ def update_artikel():
 
     return redirect(url_for('main.list_artikel'))
 
+
+# History Login =================================
 
 
 @auth.route('/logout')

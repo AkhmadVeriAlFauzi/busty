@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, session
 from routes import generate_otp, send_otp_email
 from werkzeug.security import generate_password_hash
 from models.user import User
+from models.devices_history import DevicesHistory
 from pymongo import MongoClient
 from werkzeug.security import check_password_hash
 import jwt
@@ -20,6 +21,7 @@ client = MongoClient('mongodb+srv://user:OG2QqFuCYwkoWBek@capstone.fqvkpyn.mongo
 db = client['busty_db']
 dbcuaca = client['cuaca_db']
 user_model = User(db)
+devices_history = DevicesHistory(db)
 SECRET_KEY = 'busty_secret_key'
 
 
@@ -847,3 +849,148 @@ def api_list_artikel():
         'data': artikel_data
     }), 200
 
+
+@api.route('/device-history', methods=['POST'])
+@require_auth
+def api_save_device_history():
+    """
+    Simpan riwayat login device
+    ---
+    tags:
+      - Device History
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          type: object
+          required:
+            - device_name
+            - device_os
+            - device_id
+          properties:
+            device_name:
+              type: string
+            device_os:
+              type: string
+            device_id:
+              type: string
+    security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+    responses:
+      201:
+        description: Data berhasil disimpan
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            message:
+              type: string
+              example: Device history saved
+            data:
+              type: null
+      400:
+        description: Data tidak lengkap
+      401:
+        description: Token atau API Key tidak valid
+    """
+    user_id = get_jwt_identity()
+    data = request.json
+
+    device_name = data.get('device_name')
+    device_os = data.get('device_os')
+    device_id = data.get('device_id')
+    login_time = datetime.utcnow()
+
+    if not all([device_name, device_os, device_id]):
+        return jsonify({
+            'status': 'error',
+            'message': 'Missing device information',
+            'data': None
+        }), 400
+
+    try:
+        db['history_devices'].insert_one({
+            'user_id': user_id,
+            'device_name': device_name,
+            'device_os': device_os,
+            'device_id': device_id,
+            'login_time': login_time
+        })
+        return jsonify({
+            'status': 'success',
+            'message': 'Device history saved',
+            'data': None
+        }), 201
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'data': None
+        }), 500
+
+@api.route('/device-history', methods=['GET'])
+@require_auth
+def api_get_device_history():
+    """
+    Ambil riwayat login device user
+    ---
+    tags:
+      - Device History
+    security:
+      - ApiKeyAuth: []
+      - BearerAuth: []
+    responses:
+      200:
+        description: Riwayat device berhasil diambil
+        schema:
+          type: object
+          properties:
+            status:
+              type: string
+              example: success
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  _id:
+                    type: string
+                  user_id:
+                    type: string
+                  device_name:
+                    type: string
+                  device_os:
+                    type: string
+                  device_id:
+                    type: string
+                  login_time:
+                    type: string
+      401:
+        description: Token atau API Key tidak valid
+    """
+    user_id = get_jwt_identity()
+    collection = db['history_devices']
+    
+    try:
+        history_data = list(collection.find({'user_id': user_id}))
+
+        for item in history_data:
+            item['_id'] = str(item['_id'])
+            if 'login_time' in item:
+                item['login_time'] = item['login_time'].strftime("%Y-%m-%d %H:%M:%S")
+
+        return jsonify({
+            'status': 'success',
+            'data': history_data
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'data': None
+        }), 500
