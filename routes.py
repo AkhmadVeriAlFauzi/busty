@@ -178,7 +178,7 @@ def register():
 
     return render_template('auth/register.html')
 
-# Register Google OAuth
+# Register Google OAuth ========================================================
 @auth.route('/register-google')
 def register_google():
     redirect_uri = url_for('auth.google_callback', _external=True)
@@ -378,7 +378,7 @@ def update_pengguna():
 
 
 
-# Route Detail Cuaca
+# Route Detail Cuaca ====================================================================================
 
 @main.route('/detail-cuaca')
 @login_required
@@ -422,7 +422,7 @@ def detail_cuaca():
 # def jadwal():
 #     return render_template('cms_page/jadwal/jadwal.html')
 
-# Rute
+# Rute Operasional =============================================================================
     
 @main.route('/rute')
 @login_required
@@ -492,6 +492,8 @@ def tambah_rute():
             'armada_id': armada_id,
             'nama_bus': armada.get('nama_bus'),
             'nopol': armada.get('nopol'),
+            'status' : 'off',
+            'kedatangan' : None,
             'created_at': datetime.utcnow()
         })
 
