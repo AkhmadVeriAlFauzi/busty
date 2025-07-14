@@ -776,6 +776,8 @@ def update_armada():
 @main.route('/artikel')
 @login_required
 def list_artikel():
+    
+    
     search_judul = request.args.get('search_judul', '').lower()
     artikel_data = list(db['artikel'].find())
 
@@ -796,27 +798,22 @@ def tambah_artikel():
         judul = request.form.get('judul')
         subjudul = request.form.get('subjudul')
         konten = request.form.get('konten')
-        file = request.files.get('gambar')
+        gambar_url = request.form.get('gambar_url')
 
         if not all([judul, subjudul, konten]):
             flash("Harap isi semua data yang diperlukan.", "error")
             return redirect(url_for('main.tambah_artikel'))
 
-        filename = None
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            upload_folder = os.path.join(app.root_path, 'static/uploads/artikel')
-            os.makedirs(upload_folder, exist_ok=True)
-            file.save(os.path.join(upload_folder, filename))
-        elif file and file.filename != '':
-            flash("Format gambar tidak didukung.", "error")
+        # validasi opsional: cek apakah URL valid
+        if gambar_url and not gambar_url.startswith("http"):
+            flash("URL gambar tidak valid.", "error")
             return redirect(url_for('main.tambah_artikel'))
 
         db['artikel'].insert_one({
             'judul': judul,
             'subjudul': subjudul,
             'konten': konten,
-            'gambar': filename,
+            'gambar': gambar_url,
             'created_at': datetime.utcnow()
         })
 
@@ -861,6 +858,7 @@ def update_artikel():
     judul = request.form.get('judul')
     subjudul = request.form.get('subjudul')
     konten = request.form.get('konten')
+    gambar = request.form.get('gambar')  # ambil URL gambar dari input
 
     if not artikel_id or not judul or not subjudul or not konten:
         flash("Data tidak lengkap.", "error")
@@ -873,6 +871,7 @@ def update_artikel():
                 'judul': judul,
                 'subjudul': subjudul,
                 'konten': konten,
+                'gambar': gambar,
                 'updated_at': datetime.utcnow()
             }}
         )
@@ -884,6 +883,7 @@ def update_artikel():
         flash(f"Gagal update artikel: {e}", "error")
 
     return redirect(url_for('main.list_artikel'))
+
 
 
 # History Login =================================

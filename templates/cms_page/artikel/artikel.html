@@ -52,8 +52,12 @@
             <tr class="border-b hover:bg-gray-50 transition">
               <td class="px-6 py-4 text-sm">{{ item._id }}</td>
               <td class="px-6 py-4 text-sm">
-                <img src="{{ url_for('static', filename='uploads/artikel/' ~ item.gambar) }}" alt="img"
-                  class="w-16 h-16 object-cover rounded-md" />
+                {% if item.gambar %}
+                <img src="{{ item.gambar }}" alt="img" class="w-16 h-16 object-cover rounded-md"
+                  onerror="this.onerror=null; this.src='https://via.placeholder.com/64?text=No+Image';" />
+                {% else %}
+                <span class="text-gray-400 text-xs italic">Tidak ada gambar</span>
+                {% endif %}
               </td>
               <td class="px-6 py-4 text-sm">{{ item.judul }}</td>
               <td class="px-6 py-4 text-sm">{{ item.subjudul }}</td>
